@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+
+  analytics-service:
+    image: openjdk:22-jdk-oracle
+    container_name: analyticsimage
+    env_file:
+      - .env
+    ports:
+      - "${SERVICE_PORT1}:8080"
+      - "${SERVICE_PORT2}:8000"
+    depends_on:
+      - analytics-db
+    networks:
+      - greenspot-net
+    volumes:
+      - ./build/libs/analyticsagerService-v1.5.4.jar:/app/app.jar
+    working_dir: /app
+    entrypoint: java -Xdebug -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000 -jar /app/app.jar
+
+  analytics-db:
+    image: mongo:latest
+    container_name: analyticsdb
+    ports:
+      - "${MONGO_PORT}:27017"
+    volumes:
+      - mongo_analytics:/etc/mongo
+      - mongo_analytics_data:/data/db
+      - mongo_analytics_config:/data/configdb
+    networks:
+      - greenspot-net
+
+networks:
+  greenspot-net:
+    name: greenspot_net
+
+volumes:
+    mongo_analytics:
+    mongo_analytics_data:
+    mongo_analytics_config:
