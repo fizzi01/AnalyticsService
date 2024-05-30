@@ -1,0 +1,27 @@
+{
+  "template": "# Changelog\n\n${{CHANGELOG}}\n\n${{RELEASE_DIFF}}\n",
+  "categories": [
+    { "title": "## 🎉 Enhancements", "labels": ["enhancement"] },
+    { "title": "## ⚒️ Bug Fixes", "labels": ["bug","fixes","fix","fixed"] },
+    { "title": "## Maintenance", "labels": ["chore"] },
+    { "title": "## 🆕 Changes", "labels": [] }
+  ],
+  "max_tags_to_fetch": 10,
+  "max_pull_requests": 50,
+  "max_issues": 50,
+  "include_unlabeled": true,
+  "include_body": true,
+  "label_extractor": [
+    {
+      "pattern": "^(build|chore|enhancement|ci|docs|feat|fix|perf|refactor|revert|style|test){1}?: ([\\w ][\\s\\S]*)",
+      "target": "$1"
+    }
+  ],
+  "transformers": [
+  {
+    "pattern": "^(build|chore|enhancement|ci|docs|feat|fix|perf|refactor|revert|style|test){1}?: ([\\w ][\\s\\S]*)",
+    "target": "$2"
+  }
+],
+  "commit_template": "- ${{MESSAGE}}\n  ${{BODY}}\n"
+}
