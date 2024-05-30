@@ -1,18 +1,14 @@
-package it.unisalento.pasproject.analyticsservice.domain;
+package it.unisalento.pasproject.analyticsservice.dto;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@Document(collection = "assigned_resource_analytics")
-public class AssignedResource {
+public class AssignedResourceAnalyticsDTO {
 
-    @Id
     private String id;
 
     private String taskId;

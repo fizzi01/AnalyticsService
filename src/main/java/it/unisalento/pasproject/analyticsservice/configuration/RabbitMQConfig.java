@@ -26,66 +26,38 @@ public class RabbitMQConfig {
 
     // ------  END SECURITY  ------ //
 
-    // ------  TASK & ASSIGNMENT  ------ //
+    // ------  ANALYTICS  ------ //
 
+    //rabbitmq.routing.sendUpdatedAssignmentData.key=assignment.update
+    //# Exchange comune per l'analytics
+    //rabbitmq.exchange.analytics.name=analytics-exchange
+    //rabbitmq.queue.analytics.name=analytics-data-queue
 
-    @Value("${rabbitmq.exchange.taskData.name}")
-    private String taskDataExchange;
+    @Value("${rabbitmq.exchange.analytics.name}")
+    private String analyticsExchange;
 
-    @Value("${rabbitmq.queue.analyticsAssignment.name}")
-    private String analyticsAssignmentQueue;
+    @Value("${rabbitmq.queue.analytics.name}")
+    private String analyticsQueue;
 
-    @Value("${rabbitmq.routing.analyticsAssignment.key}")
-    private String analyticsAssignmentRoutingKey;
-
-    @Value("${rabbitmq.queue.analyticsNewTask.name}")
-    private String analyticsNewTaskQueue;
-
-    @Value("${rabbitmq.routing.newTask.key}")
-    private String newTaskRoutingKey;
-
-    @Value("${rabbitmq.routing.taskexecution.key}")
-    private String taskExecutionRoutingKey;
-
-    @Value("${rabbitmq.queue.analyticsTaskExecution.name}")
-    private String analyticsTaskExecutionQueue;
+    @Value("${rabbitmq.routing.updatedAssignmentData.key}")
+    private String updatedAssignmentDataRoutingKey;
 
     @Bean
-    public TopicExchange taskDataExchange() {
-        return new TopicExchange(taskDataExchange);
+    public Queue analyticsQueue() {
+        return new Queue(analyticsQueue);
     }
 
     @Bean
-    public Queue analyticsAssignmentQueue() {
-        return new Queue(analyticsAssignmentQueue);
+    public TopicExchange analyticsExchange() {
+        return new TopicExchange(analyticsExchange);
     }
 
     @Bean
-    public Binding analyticsAssignmentBinding() {
-        return BindingBuilder.bind(analyticsAssignmentQueue()).to(taskDataExchange()).with(analyticsAssignmentRoutingKey);
+    public Binding updatedAssignmentDataBinding() {
+        return BindingBuilder.bind(analyticsQueue()).to(analyticsExchange()).with(updatedAssignmentDataRoutingKey);
     }
 
-    @Bean
-    public Queue analyticsNewTaskQueue() {
-        return new Queue(analyticsNewTaskQueue);
-    }
-
-    @Bean
-    public Binding analyticsNewTaskBinding() {
-        return BindingBuilder.bind(analyticsNewTaskQueue()).to(taskDataExchange()).with(newTaskRoutingKey);
-    }
-
-    @Bean
-    public Queue analyticsTaskExecutionQueue() {
-        return new Queue(analyticsTaskExecutionQueue);
-    }
-
-    @Bean
-    public Binding analyticsTaskExecutionBinding() {
-        return BindingBuilder.bind(analyticsTaskExecutionQueue()).to(taskDataExchange()).with(taskExecutionRoutingKey);
-    }
-
-    // ------  END TASK & ASSIGNMENT  ------ //
+    // ------  END ANALYTICS  ------ //
 
     /**
      * Creates a message converter for JSON messages.
