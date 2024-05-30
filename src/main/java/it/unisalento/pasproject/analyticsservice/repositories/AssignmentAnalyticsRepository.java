@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface AssignmentAnalyticsRepository extends MongoRepository<AssignmentAnalytics, String>{
     Optional<AssignmentAnalytics> findByTaskId(String taskId);
+
+    double getWorkHours(String memberEmail);
 }

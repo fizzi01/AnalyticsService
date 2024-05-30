@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class AssignedAnalyticsDTO {
 
     private String taskId;
+    private String emailUtente;
 
     private boolean isComplete;
 

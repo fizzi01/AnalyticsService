@@ -17,6 +17,7 @@ public class AssignmentAnalytics {
     private String id;
 
     private String taskId;
+    private String emailUtente;
 
     private boolean isComplete;
 

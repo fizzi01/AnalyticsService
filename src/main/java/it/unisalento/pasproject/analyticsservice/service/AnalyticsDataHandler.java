@@ -93,6 +93,7 @@ public class AnalyticsDataHandler {
         AssignmentAnalytics assignmentAnalytics = new AssignmentAnalytics();
 
         assignmentAnalytics.setTaskId(assignedAnalyticsDTO.getTaskId());
+        assignmentAnalytics.setEmailUtente(assignedAnalyticsDTO.getEmailUtente());
         assignmentAnalytics.setComplete(assignedAnalyticsDTO.isComplete());
         assignmentAnalytics.setAssignedTime(assignedAnalyticsDTO.getAssignedTime());
         assignmentAnalytics.setCompletedTime(assignedAnalyticsDTO.getCompletedTime());

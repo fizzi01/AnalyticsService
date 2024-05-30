@@ -5,19 +5,22 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Getter
 @Setter
-public class MemberAnalyticsDTO {
+@Getter
+public class AnalyticsDTO {
 
-    private String memberEmail;
-    private double workHours;
+    //Contiene le statistiche complete della REC
 
     private double energyConsumed;
-    private double computingPower;
+    private double computingPowerUsed;
 
+    private int activeMemberCount;
+    private int activeUserCount;
+
+    private int tasksSubmitted;
     private int tasksCompleted;
-    private int tasksInProgress;
-    private int tasksAssigned;
+
+    private double workHours;
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;
