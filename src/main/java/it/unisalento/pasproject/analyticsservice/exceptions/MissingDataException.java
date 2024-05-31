@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class MissingDataException extends CustomErrorException {
     public MissingDataException(String message) {
-        super(message, HttpStatus.NO_CONTENT);
+        super(message, HttpStatus.NOT_FOUND);
     }
 }

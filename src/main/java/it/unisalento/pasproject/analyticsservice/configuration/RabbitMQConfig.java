@@ -28,11 +28,6 @@ public class RabbitMQConfig {
 
     // ------  ANALYTICS  ------ //
 
-    //rabbitmq.routing.sendUpdatedAssignmentData.key=assignment.update
-    //# Exchange comune per l'analytics
-    //rabbitmq.exchange.analytics.name=analytics-exchange
-    //rabbitmq.queue.analytics.name=analytics-data-queue
-
     @Value("${rabbitmq.exchange.analytics.name}")
     private String analyticsExchange;
 
@@ -54,7 +49,10 @@ public class RabbitMQConfig {
 
     @Bean
     public Binding updatedAssignmentDataBinding() {
-        return BindingBuilder.bind(analyticsQueue()).to(analyticsExchange()).with(updatedAssignmentDataRoutingKey);
+        return BindingBuilder
+                .bind(analyticsQueue())
+                .to(analyticsExchange())
+                .with(updatedAssignmentDataRoutingKey);
     }
 
     // ------  END ANALYTICS  ------ //

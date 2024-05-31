@@ -36,22 +36,20 @@ public class UserCheckService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserCheckService.class);
 
 
-    /**
-     * Load the user details by email
-     * @param email the email of the user
-     * @return the user details
-     * @throws UsernameNotFoundException if the user is not found
-     */
     public UserDetailsDTO loadUserByUsername(String email) throws UsernameNotFoundException {
 
         //Chiamata MQTT a CQRS per ottenere i dettagli dell'utente
-        UserDetailsDTO user = messageExchanger.exchangeMessage(email,securityRequestRoutingKey,securityExchange,UserDetailsDTO.class);
+        UserDetailsDTO user = null;
 
-        if(user == null) {
-            throw new UsernameNotFoundException(email);
+        try {
+            user = messageExchanger.exchangeMessage(email,securityRequestRoutingKey,securityExchange,UserDetailsDTO.class);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
         }
 
-        LOGGER.info(String.format("User %s found with role: %s and enabled %s", user.getEmail(), user.getRole(), user.getEnabled()));
+        if(user != null) {
+            LOGGER.info(String.format("User %s found with role: %s and enabled %s", user.getEmail(), user.getRole(), user.getEnabled()));
+        }
 
         return user;
     }
@@ -78,5 +76,4 @@ public class UserCheckService {
         String currentRole = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
         return currentRole.equalsIgnoreCase(ROLE_ADMIN);
     }
-
 }

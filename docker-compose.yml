@@ -15,7 +15,7 @@ services:
     networks:
       - greenspot-net
     volumes:
-      - ./build/libs/analyticsagerService-v1.5.4.jar:/app/app.jar
+      - ./build/libs/AnalyticsService-0.0.1.jar:/app/app.jar
     working_dir: /app
     entrypoint: java -Xdebug -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000 -jar /app/app.jar
 

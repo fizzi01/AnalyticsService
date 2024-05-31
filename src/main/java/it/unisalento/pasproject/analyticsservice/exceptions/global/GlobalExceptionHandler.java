@@ -25,7 +25,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(exception.getErrorResponse().getStatus()).body(exception.getErrorResponse());
     }
 
-    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    @ExceptionHandler(AccessDeniedException.class)
     protected ResponseEntity<CustomErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
         CustomErrorResponse errorResponse = CustomErrorResponse.builder()
                 .traceId(UUID.randomUUID().toString())
