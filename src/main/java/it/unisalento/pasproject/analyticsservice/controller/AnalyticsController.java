@@ -1,14 +1,12 @@
 package it.unisalento.pasproject.analyticsservice.controller;
 
-import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.dto.AnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.MemberAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.UserAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.exceptions.BadFormatRequestException;
 import it.unisalento.pasproject.analyticsservice.exceptions.MissingDataException;
+import it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants;
 import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,17 +17,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static it.unisalento.pasproject.analyticsservice.security.SecurityConstants.*;
+import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.*;
 
 @RestController
 @RequestMapping("/api/analytics")
 public class AnalyticsController {
 
     private final CalculateAnalyticsService calculateAnalyticsService;
-    private static final Logger LOGGER = LoggerFactory.getLogger(AnalyticsController.class);
 
 
     @Autowired
@@ -48,7 +45,7 @@ public class AnalyticsController {
             Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente);
 
             if (userAnalyticsDTO.isEmpty()) {
-                throw new MissingDataException("No data found for user " + emailUtente);
+                throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailUtente);
             }
 
             return userAnalyticsDTO.get();
@@ -56,7 +53,7 @@ public class AnalyticsController {
         }catch (MissingDataException e){
             throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
-            throw new MissingDataException("Error: " + e.getMessage());
+            throw new MissingDataException(AnalyticsQueryConstants.ERROR + e.getMessage());
         }
 
     }
@@ -80,7 +77,7 @@ public class AnalyticsController {
         }catch (MissingDataException e){
             throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
-            throw new MissingDataException("Error: " + e.getMessage());
+            throw new MissingDataException(ERROR + e.getMessage());
         }
 
     }
@@ -90,26 +87,23 @@ public class AnalyticsController {
     @GetMapping("/member/get")
     @Secured({ROLE_MEMBRO})
     public MemberAnalyticsDTO getMemberAnalytics() {
-        LOGGER.info("Getting analytics for member");
+
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String emailMembro = userDetails.getUsername();
-        LOGGER.info("Getting analytics for member {}", emailMembro);
+
         try {
             Optional<MemberAnalyticsDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberAnalytics(emailMembro);
-            LOGGER.info("Stats {}", memberAnalyticsDTO);
+
             if (memberAnalyticsDTO.isEmpty()) {
-                throw new MissingDataException("No data found for member " + emailMembro);
+                throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
             }
-            LOGGER.info("workHours {}", memberAnalyticsDTO.get().getWorkHours());
-            LOGGER.info("energyConsumed {}", memberAnalyticsDTO.get().getEnergyConsumed());
-            LOGGER.info("computingPower {}", memberAnalyticsDTO.get().getComputingPower());
 
             return memberAnalyticsDTO.get();
 
         } catch (MissingDataException e) {
             throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
-            throw new MissingDataException("Error: " + e.getMessage());
+            throw new MissingDataException(ERROR + e.getMessage());
         }
 
     }
@@ -120,8 +114,8 @@ public class AnalyticsController {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String emailMembro = userDetails.getUsername();
 
-        LocalDateTime start = null;
-        LocalDateTime end = null;
+        LocalDateTime start;
+        LocalDateTime end;
 
         try {
             start = LocalDateTime.parse(startDate);
@@ -134,7 +128,7 @@ public class AnalyticsController {
             Optional<MemberAnalyticsDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberAnalytics(emailMembro,start,end);
 
             if (memberAnalyticsDTO.isEmpty()) {
-                throw new MissingDataException("No data found for member " + emailMembro);
+                throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
             }
 
             return memberAnalyticsDTO.get();
@@ -142,7 +136,7 @@ public class AnalyticsController {
         } catch (MissingDataException e) {
             throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
-            throw new MissingDataException("Error: " + e.getMessage());
+            throw new MissingDataException(ERROR + e.getMessage());
         }
 
     }
@@ -153,7 +147,7 @@ public class AnalyticsController {
         try{
             return calculateAnalyticsService.getOverallAnalytics();
         } catch (Exception e) {
-            throw new MissingDataException("Error: " + e.getMessage());
+            throw new MissingDataException(ERROR + e.getMessage());
         }
     }
 
