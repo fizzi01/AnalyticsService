@@ -14,7 +14,7 @@ public class UserAnalyticsDTO {
 
     private int tasksSubmitted;
 
-    private int taskOngoing;
+    private int tasksOngoing;
     private int tasksCompleted;
 
     private double energySaved;

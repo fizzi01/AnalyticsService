@@ -7,31 +7,24 @@ import it.unisalento.pasproject.analyticsservice.dto.AssignedAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.AssignedResourceAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.repositories.AssignedResourceRepository;
 import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
-/**
- * La classe gestisce la ricezione dei dati necessari al servizio.
- * In particolare ha bisogno di ricevere:
- * - i dati dei membri
- * - - Potenza di calcolo
- * - - Consumo di energia per ora
- * - - Tempo di lavoro nella task assegnata
- * <p>
- * Questi valori vengono ricevuti per ogni assegnazione di una risorsa del membro
- * <p>
- * - i dati dell'utente
- * - - Quando la task è stata completata ( Risorse dei membri assegnate ) -> Si somma la potenza di calcolo e il consumo di energia per ora ( * tempo di lavoro )
- * - - Quando la task viene avviata (Per tenere traccia delle task submitted)
- */
 public class AnalyticsDataHandler {
 
     private final AssignmentAnalyticsRepository assignmentAnalyticsRepository;
     private final AssignedResourceRepository assignedResourceRepository;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AnalyticsDataHandler.class);
+
+
+    @Autowired
     public AnalyticsDataHandler(AssignmentAnalyticsRepository assignmentAnalyticsRepository, AssignedResourceRepository assignedResourceRepository) {
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
         this.assignedResourceRepository = assignedResourceRepository;
@@ -39,6 +32,7 @@ public class AnalyticsDataHandler {
 
     @RabbitListener(queues = "${rabbitmq.queue.analytics.name}")
     public void receiveUpdatedAssignmentData(AnalyticsMessageDTO message) {
+        LOGGER.info("Received message: {}", message);
         if (message != null){
             if(message.getAssignedResource()!= null){
                 AssignedResource assignedResource = getFromDto(message.getAssignedResource());

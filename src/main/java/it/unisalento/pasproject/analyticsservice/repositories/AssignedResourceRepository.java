@@ -4,8 +4,5 @@ import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface AssignedResourceRepository extends MongoRepository<AssignedResource, String>{
-    double getEnergyConsumed(String memberEmail);
-
-    double getComputingPower(String memberEmail);
 
 }

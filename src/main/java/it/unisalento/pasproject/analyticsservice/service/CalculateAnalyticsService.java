@@ -28,23 +28,31 @@ public class CalculateAnalyticsService {
 
         ProjectionOperation projectOperation = Aggregation.project()
                 .andInclude("memberEmail")
-                .andExpression("{$cond: {if: {$eq: ['$hasCompleted', true]}, then: {$subtract: ['$completedTime', '$assignedTime']}, else: 0}}").as("workDuration")
-                .andInclude("assignedEnergyConsumptionPerHour")
-                .andExpression("{$add: ['$assignedSingleScore', '$assignedMultiScore', '$assignedOpenclScore', '$assignedVulkanScore', '$assignedCudaScore']}").as("totalComputingPower")
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("workDuration")
+                .andInclude("assignedEnergyConsumptionPerHour","hasCompleted")
+                .and(ArithmeticOperators.Add.valueOf("assignedSingleScore")
+                        .add("assignedMultiScore")
+                        .add("assignedOpenclScore")
+                        .add("assignedVulkanScore")
+                        .add("assignedCudaScore")).as("totalComputingPower")
                 .andInclude("assignedTime");
+
+        GroupOperation groupOperation = Aggregation.group("memberEmail")
+                .first("memberEmail").as("memberEmail")
+                .sum("workDuration").as("totalWorkDuration")
+                .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
+                .sum("totalComputingPower").as("computingPower")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(false)).then(1).otherwise(0)).as("tasksInProgress")
+                .count().as("tasksAssigned")
+                .min("assignedTime").as("startDate")
+                .max("assignedTime").as("endDate");
 
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 projectOperation,
-                Aggregation.group("memberEmail")
-                        .sum("workDuration").as("totalWorkDuration")
-                        .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
-                        .sum("totalComputingPower").as("computingPower")
-                        .sum("{$cond: {if: {$eq: ['$hasCompleted', true]}, then: 1, else: 0}}").as("tasksCompleted")
-                        .sum("{$cond: {if: {$eq: ['$hasCompleted', false]}, then: 1, else: 0}}").as("tasksInProgress")
-                        .count().as("tasksAssigned")
-                        .min("assignedTime").as("startDate")
-                        .max("assignedTime").as("endDate"),
+                groupOperation,
                 Aggregation.project("memberEmail", "totalWorkDuration", "energyConsumed", "computingPower", "tasksCompleted", "tasksInProgress", "tasksAssigned", "startDate", "endDate")
                         .andExpression("totalWorkDuration / 3600000").as("workHours") // Convert milliseconds to hours
         );
@@ -71,23 +79,31 @@ public class CalculateAnalyticsService {
 
         ProjectionOperation projectOperation = Aggregation.project()
                 .andInclude("memberEmail")
-                .andExpression("{$cond: {if: {$eq: ['$hasCompleted', true]}, then: {$subtract: ['$completedTime', '$assignedTime']}, else: 0}}").as("workDuration")
-                .andInclude("assignedEnergyConsumptionPerHour")
-                .andExpression("{$add: ['$assignedSingleScore', '$assignedMultiScore', '$assignedOpenclScore', '$assignedVulkanScore', '$assignedCudaScore']}").as("totalComputingPower")
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("workDuration")
+                .andInclude("assignedEnergyConsumptionPerHour","hasCompleted")
+                .and(ArithmeticOperators.Add.valueOf("assignedSingleScore")
+                        .add("assignedMultiScore")
+                        .add("assignedOpenclScore")
+                        .add("assignedVulkanScore")
+                        .add("assignedCudaScore")).as("totalComputingPower")
                 .andInclude("assignedTime");
+
+        GroupOperation groupOperation = Aggregation.group("memberEmail")
+                .first("memberEmail").as("memberEmail")
+                .sum("workDuration").as("totalWorkDuration")
+                .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
+                .sum("totalComputingPower").as("computingPower")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(false)).then(1).otherwise(0)).as("tasksInProgress")
+                .count().as("tasksAssigned")
+                .min("assignedTime").as("startDate")
+                .max("assignedTime").as("endDate");
 
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 projectOperation,
-                Aggregation.group("memberEmail")
-                        .sum("workDuration").as("totalWorkDuration")
-                        .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
-                        .sum("totalComputingPower").as("computingPower")
-                        .sum("{$cond: {if: {$eq: ['$hasCompleted', true]}, then: 1, else: 0}}").as("tasksCompleted")
-                        .sum("{$cond: {if: {$eq: ['$hasCompleted', false]}, then: 1, else: 0}}").as("tasksInProgress")
-                        .count().as("tasksAssigned")
-                        .min("assignedTime").as("startDate")
-                        .max("assignedTime").as("endDate"),
+                groupOperation,
                 Aggregation.project("memberEmail", "totalWorkDuration", "energyConsumed", "computingPower", "tasksCompleted", "tasksInProgress", "tasksAssigned", "startDate", "endDate")
                         .andExpression("totalWorkDuration / 3600000").as("workHours") // Convert milliseconds to hours
         );
@@ -104,25 +120,34 @@ public class CalculateAnalyticsService {
 
         ProjectionOperation projectOperation = Aggregation.project()
                 .andInclude("emailUtente")
-                .andExpression("{$cond: {if: {$eq: ['$isComplete', true]}, then: {$subtract: ['$completedTime', '$assignedTime']}, else: 0}}").as("timeSpent")
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("timeSpent")
                 .andInclude("assignedTime", "completedTime", "isComplete")
-                .andExpression("{$sum: '$assignedResources.assignedEnergyConsumptionPerHour'}").as("totalEnergySaved")
-                .andExpression("{$sum: {$add: ['$assignedResources.assignedSingleScore', '$assignedResources.assignedMultiScore', '$assignedResources.assignedOpenclScore', '$assignedResources.assignedVulkanScore', '$assignedResources.assignedCudaScore']}}").as("totalComputingPower");
+                .and("assignedResources.assignedEnergyConsumptionPerHour").as("assignedEnergyConsumptionPerHour")
+                .and(ArithmeticOperators.Add.valueOf("assignedResources.assignedSingleScore")
+                        .add("assignedResources.assignedMultiScore")
+                        .add("assignedResources.assignedOpenclScore")
+                        .add("assignedResources.assignedVulkanScore")
+                        .add("assignedResources.assignedCudaScore")).as("totalComputingPower");
+
+        GroupOperation groupOperation = Aggregation.group("emailUtente")
+                .first("emailUtente").as("userEmail")
+                .sum("timeSpent").as("totalTimeSpent")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(false)).then(1).otherwise(0)).as("tasksOngoing")
+                .count().as("tasksSubmitted")
+                .min("assignedTime").as("startDate")
+                .max("assignedTime").as("endDate")
+                .sum("assignedEnergyConsumptionPerHour").as("energySaved")
+                .sum("totalComputingPower").as("computingPowerUsed");
 
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 lookupOperation,
+                Aggregation.unwind("assignedResources", true),
                 projectOperation,
-                Aggregation.group("emailUtente")
-                        .sum("timeSpent").as("totalTimeSpent")
-                        .sum("{$cond: {if: {$eq: ['$isComplete', true]}, then: 1, else: 0}}").as("tasksCompleted")
-                        .sum("{$cond: {if: {$eq: ['$isComplete', false]}, then: 1, else: 0}}").as("tasksOngoing")
-                        .count().as("tasksSubmitted")
-                        .min("assignedTime").as("startDate")
-                        .max("assignedTime").as("endDate")
-                        .sum("totalEnergySaved").as("energySaved")
-                        .sum("totalComputingPower").as("computingPowerUsed"),
-                Aggregation.project("emailUtente", "totalTimeSpent", "tasksCompleted", "tasksOngoing", "tasksSubmitted", "startDate", "endDate", "energySaved", "computingPowerUsed")
+                groupOperation,
+                Aggregation.project("userEmail", "totalTimeSpent", "tasksCompleted", "tasksOngoing", "tasksSubmitted", "startDate", "endDate", "energySaved", "computingPowerUsed")
                         .andExpression("totalTimeSpent / 3600000").as("timeSpentOnTasks") // Convert milliseconds to hours
         );
 
@@ -150,25 +175,34 @@ public class CalculateAnalyticsService {
 
         ProjectionOperation projectOperation = Aggregation.project()
                 .andInclude("emailUtente")
-                .andExpression("{$cond: {if: {$eq: ['$isComplete', true]}, then: {$subtract: ['$completedTime', '$assignedTime']}, else: 0}}").as("timeSpent")
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("timeSpent")
                 .andInclude("assignedTime", "completedTime", "isComplete")
-                .andExpression("{$sum: '$assignedResources.assignedEnergyConsumptionPerHour'}").as("totalEnergySaved")
-                .andExpression("{$sum: {$add: ['$assignedResources.assignedSingleScore', '$assignedResources.assignedMultiScore', '$assignedResources.assignedOpenclScore', '$assignedResources.assignedVulkanScore', '$assignedResources.assignedCudaScore']}}").as("totalComputingPower");
+                .and("assignedResources.assignedEnergyConsumptionPerHour").as("assignedEnergyConsumptionPerHour")
+                .and(ArithmeticOperators.Add.valueOf("assignedResources.assignedSingleScore")
+                        .add("assignedResources.assignedMultiScore")
+                        .add("assignedResources.assignedOpenclScore")
+                        .add("assignedResources.assignedVulkanScore")
+                        .add("assignedResources.assignedCudaScore")).as("totalComputingPower");
+
+        GroupOperation groupOperation = Aggregation.group("emailUtente")
+                .first("emailUtente").as("userEmail")
+                .sum("timeSpent").as("totalTimeSpent")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(false)).then(1).otherwise(0)).as("tasksOngoing")
+                .count().as("tasksSubmitted")
+                .min("assignedTime").as("startDate")
+                .max("assignedTime").as("endDate")
+                .sum("assignedEnergyConsumptionPerHour").as("energySaved")
+                .sum("totalComputingPower").as("computingPowerUsed");
 
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 lookupOperation,
+                Aggregation.unwind("assignedResources", true),
                 projectOperation,
-                Aggregation.group("emailUtente")
-                        .sum("timeSpent").as("totalTimeSpent")
-                        .sum("{$cond: {if: {$eq: ['$isComplete', true]}, then: 1, else: 0}}").as("tasksCompleted")
-                        .sum("{$cond: {if: {$eq: ['$isComplete', false]}, then: 1, else: 0}}").as("tasksOngoing")
-                        .count().as("tasksSubmitted")
-                        .min("assignedTime").as("startDate")
-                        .max("assignedTime").as("endDate")
-                        .sum("totalEnergySaved").as("energySaved")
-                        .sum("totalComputingPower").as("computingPowerUsed"),
-                Aggregation.project("emailUtente", "totalTimeSpent", "tasksCompleted", "tasksOngoing", "tasksSubmitted", "startDate", "endDate", "energySaved", "computingPowerUsed")
+                groupOperation,
+                Aggregation.project("userEmail", "totalTimeSpent", "tasksCompleted", "tasksOngoing", "tasksSubmitted", "startDate", "endDate", "energySaved", "computingPowerUsed")
                         .andExpression("totalTimeSpent / 3600000").as("timeSpentOnTasks") // Convert milliseconds to hours
         );
 
@@ -181,19 +215,25 @@ public class CalculateAnalyticsService {
         LookupOperation lookupOperation = Aggregation.lookup("assignment_analytics", "taskId", "taskId", "assignments");
 
         ProjectionOperation projectOperation = Aggregation.project()
-                .andInclude("assignedEnergyConsumptionPerHour", "assignedSingleScore", "assignedMultiScore", "assignedOpenclScore", "assignedVulkanScore", "assignedCudaScore", "memberEmail")
+                .andInclude("assignedEnergyConsumptionPerHour", "assignedSingleScore", "assignedMultiScore", "assignedOpenclScore", "assignedVulkanScore", "assignedCudaScore", "memberEmail", "assignedTime", "completedTime", "isComplete")
                 .andExpression("{$sum: '$assignments'}").as("assignments")
                 .andExpression("assignedTime").as("assignedTime")
                 .andExpression("completedTime").as("completedTime")
-                .andExpression("{$cond: {if: {$eq: ['$isComplete', true]}, then: {$subtract: ['$completedTime', '$assignedTime']}, else: 0}}").as("workDuration")
-                .andExpression("{$sum: {$add: ['$assignedResources.assignedSingleScore', '$assignedResources.assignedMultiScore', '$assignedResources.assignedOpenclScore', '$assignedResources.assignedVulkanScore', '$assignedResources.assignedCudaScore']}}").as("computingPowerUsed");
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("workDuration")
+                .and(ArithmeticOperators.Add.valueOf("assignedSingleScore")
+                        .add("assignedMultiScore")
+                        .add("assignedOpenclScore")
+                        .add("assignedVulkanScore")
+                        .add("assignedCudaScore")).as("computingPower");
 
         GroupOperation groupOperation = Aggregation.group()
                 .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
-                .sum("computingPowerUsed").as("computingPowerUsed")
+                .sum("computingPower").as("computingPowerUsed")
                 .addToSet("memberEmail").as("uniqueMembers")
                 .addToSet("assignments.emailUtente").as("uniqueUsers")
-                .sum("{$cond: {if: {$eq: ['$assignments.isComplete', true]}, then: 1, else: 0}}").as("tasksCompleted")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("assignments.isComplete").equalToValue(true))
+                        .then(1).otherwise(0)).as("tasksCompleted")
                 .count().as("tasksSubmitted")
                 .sum("workDuration").as("totalWorkDuration")
                 .min("assignedTime").as("startDate")
@@ -203,10 +243,10 @@ public class CalculateAnalyticsService {
                 lookupOperation,
                 projectOperation,
                 groupOperation,
-                Aggregation.project("energyConsumed", "computingPowerUsed", "activeMemberCount", "activeUserCount", "tasksSubmitted", "tasksCompleted", "startDate", "endDate")
+                Aggregation.project("energyConsumed", "computingPowerUsed", "tasksSubmitted", "tasksCompleted", "startDate", "endDate")
                         .andExpression("totalWorkDuration / 3600000").as("workHours") // Convert milliseconds to hours
-                        .and("uniqueMembers").size().as("activeMemberCount")
-                        .and("uniqueUsers").size().as("activeUserCount")
+                        .and(ArrayOperators.Size.lengthOfArray("uniqueMembers")).as("activeMemberCount")
+                        .and(ArrayOperators.Size.lengthOfArray("uniqueUsers")).as("activeUserCount")
         );
 
         AggregationResults<AnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assigned_resource_analytics", AnalyticsDTO.class);
@@ -220,19 +260,25 @@ public class CalculateAnalyticsService {
         MatchOperation matchOperation = Aggregation.match(Criteria.where("assignedTime").gte(startDate).and("assignedTime").lte(endDate));
 
         ProjectionOperation projectOperation = Aggregation.project()
-                .andInclude("assignedEnergyConsumptionPerHour", "assignedSingleScore", "assignedMultiScore", "assignedOpenclScore", "assignedVulkanScore", "assignedCudaScore", "memberEmail")
+                .andInclude("assignedEnergyConsumptionPerHour", "assignedSingleScore", "assignedMultiScore", "assignedOpenclScore", "assignedVulkanScore", "assignedCudaScore", "memberEmail", "assignedTime", "completedTime", "isComplete")
                 .andExpression("{$sum: '$assignments'}").as("assignments")
                 .andExpression("assignedTime").as("assignedTime")
                 .andExpression("completedTime").as("completedTime")
-                .andExpression("{$cond: {if: {$eq: ['$isComplete', true]}, then: {$subtract: ['$completedTime', '$assignedTime']}, else: 0}}").as("workDuration")
-                .andExpression("{$sum: {$add: ['$assignedResources.assignedSingleScore', '$assignedResources.assignedMultiScore', '$assignedResources.assignedOpenclScore', '$assignedResources.assignedVulkanScore', '$assignedResources.assignedCudaScore']}}").as("computingPowerUsed");
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("workDuration")
+                .and(ArithmeticOperators.Add.valueOf("assignedSingleScore")
+                        .add("assignedMultiScore")
+                        .add("assignedOpenclScore")
+                        .add("assignedVulkanScore")
+                        .add("assignedCudaScore")).as("computingPower");
 
         GroupOperation groupOperation = Aggregation.group()
                 .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
-                .sum("computingPowerUsed").as("computingPowerUsed")
+                .sum("computingPower").as("computingPowerUsed")
                 .addToSet("memberEmail").as("uniqueMembers")
                 .addToSet("assignments.emailUtente").as("uniqueUsers")
-                .sum("{$cond: {if: {$eq: ['$assignments.isComplete', true]}, then: 1, else: 0}}").as("tasksCompleted")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("assignments.isComplete").equalToValue(true))
+                        .then(1).otherwise(0)).as("tasksCompleted")
                 .count().as("tasksSubmitted")
                 .sum("workDuration").as("totalWorkDuration")
                 .min("assignedTime").as("startDate")
@@ -245,8 +291,8 @@ public class CalculateAnalyticsService {
                 groupOperation,
                 Aggregation.project("energyConsumed", "computingPowerUsed", "activeMemberCount", "activeUserCount", "tasksSubmitted", "tasksCompleted", "startDate", "endDate")
                         .andExpression("totalWorkDuration / 3600000").as("workHours") // Convert milliseconds to hours
-                        .and("uniqueMembers").size().as("activeMemberCount")
-                        .and("uniqueUsers").size().as("activeUserCount")
+                        .and(ArrayOperators.Size.lengthOfArray("uniqueMembers")).as("activeMemberCount")
+                        .and(ArrayOperators.Size.lengthOfArray("uniqueUsers")).as("activeUserCount")
         );
 
         AggregationResults<AnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assigned_resource_analytics", AnalyticsDTO.class);
