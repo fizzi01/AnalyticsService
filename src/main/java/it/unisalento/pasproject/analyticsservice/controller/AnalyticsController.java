@@ -41,7 +41,7 @@ public class AnalyticsController {
 
         String emailUtente = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
 
-        try{
+        try {
             Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente);
 
             if (userAnalyticsDTO.isEmpty()) {
@@ -50,7 +50,7 @@ public class AnalyticsController {
 
             return userAnalyticsDTO.get();
 
-        }catch (MissingDataException e){
+        } catch (MissingDataException e) {
             throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
             throw new MissingDataException(AnalyticsQueryConstants.ERROR + e.getMessage());
@@ -65,7 +65,8 @@ public class AnalyticsController {
         String emailUtente = userDetails.getUsername();
         LocalDateTime start = LocalDateTime.parse(startDate);
         LocalDateTime end = LocalDateTime.parse(endDate);
-        try{
+
+        try {
             Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente, start, end);
 
             if (userAnalyticsDTO.isEmpty()) {
@@ -74,14 +75,13 @@ public class AnalyticsController {
 
             return userAnalyticsDTO.get();
 
-        }catch (MissingDataException e){
+        } catch (MissingDataException e) {
             throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
             throw new MissingDataException(ERROR + e.getMessage());
         }
 
     }
-
 
 
     @GetMapping("/member/get")
@@ -125,7 +125,7 @@ public class AnalyticsController {
         }
 
         try {
-            Optional<MemberAnalyticsDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberAnalytics(emailMembro,start,end);
+            Optional<MemberAnalyticsDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberAnalytics(emailMembro, start, end);
 
             if (memberAnalyticsDTO.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
@@ -144,11 +144,31 @@ public class AnalyticsController {
     @GetMapping("/get")
     @Secured({ROLE_ADMIN})
     public AnalyticsDTO getAllAnalytics() {
-        try{
+        try {
             return calculateAnalyticsService.getOverallAnalytics();
         } catch (Exception e) {
             throw new MissingDataException(ERROR + e.getMessage());
         }
+    }
+
+    @GetMapping("/admin/get/user")
+    @Secured({ROLE_ADMIN})
+    public UserAnalyticsDTO getUserAnalytics(@RequestParam String email) {
+        try {
+            Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(email);
+
+            if (userAnalyticsDTO.isEmpty()) {
+                throw new MissingDataException(NO_DATA_FOUND_FOR_USER + email);
+            }
+
+            return userAnalyticsDTO.get();
+
+        } catch (MissingDataException e) {
+            throw new MissingDataException(e.getMessage());
+        } catch (Exception e) {
+            throw new MissingDataException(AnalyticsQueryConstants.ERROR + e.getMessage());
+        }
+
     }
 
 

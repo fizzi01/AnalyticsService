@@ -181,8 +181,6 @@ jobs:
           name: Release ${{ needs.prepare_release.outputs.new-tag }}
           bodyFile: changelog.md
           makeLatest: "latest"
-          artifacts: |
-            *.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
