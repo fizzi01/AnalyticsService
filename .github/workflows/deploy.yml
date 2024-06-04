@@ -11,21 +11,33 @@ on:
         description: 'Forced build'
   push:
     branches:
-      - dev
+      - main
+      - master
     paths:
-      - '**/*.java'
-      - '**/application.properties'
-      - '**/resources/*'
+      - '/*.java'
+      - '/application.properties'
+      - '/resources/*'
       - '*.gradle'
-      
+
 jobs:
   build:
     name: Build Service Jar
     runs-on: ubuntu-latest
+    permissions: write-all
+    environment: aws
+    env:
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PATH: ${{ secrets.SSH_PATH }}
+      SSH_KEY:  ${{ secrets.SSH_KEY }}
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      DEPLOY:   ${{ vars.DEPLOY }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v3
@@ -39,28 +51,6 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew bootJar
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: service-jar
-          path: build/libs/*.jar
-
-        
-
-  prepare_release:
-    name: Prepare release
-    needs: build
-    runs-on: ubuntu-latest
-    permissions: write-all
-    outputs:
-      new-tag: ${{ steps.new_version.outputs.NEW_TAG }}
-      tag-message: ${{ steps.commit_messages.outputs.commit_messages }}
-      changelog: ${{ steps.changelog.outputs.changelog }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Get latest tag
         id: tag_version
@@ -101,7 +91,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.NEW_TAG }}
-    
+
 
       - name: Update build.gradle
         run: |
@@ -113,11 +103,14 @@ jobs:
           if [ -f docker-compose.yml ]; then
             repository_name="${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}"
             new_jar_name="$repository_name-${{ env.NEW_TAG }}.jar"  # Costruisce il nuovo nome del JAR
-            sed -i'' -e "s|./build/libs/$repository_name-v[0-9]*\.[0-9]*\.[0-9]*\.jar|./build/libs/$new_jar_name|g" docker-compose.yml
+            sed -i'' -e "s|./build/libs/$repository_name-v[0-9]\.[0-9]\.[0-9]*\.jar|./build/libs/$new_jar_name|g" docker-compose.yml
           else
             echo "docker-compose.yml not found, skipping update."
           fi
-          
+
+      - name: Pull latest changes
+        run: |
+          git pull origin ${{ github.ref_name }}
 
       - name: Commit and push changes
         run: |
@@ -145,76 +138,28 @@ jobs:
         run: |
           echo "${{ steps.changelog.outputs.changelog }}"
 
-
-  release:
-    name: Release Service
-    needs: prepare_release
-    permissions: write-all
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: service-jar
-
       - name: Artifact rename
         run: |
           ls -l
           echo "Renaming artifact jar"
-          mv *.jar ${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}-${{  needs.prepare_release.outputs.new-tag }}.jar
+          mv build/libs/*.jar build/libs/${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}-${{ env.NEW_TAG }}.jar
           ls -l
 
       - name: Save Changelog to File
         run: |
-          echo "${{ needs.prepare_release.outputs.changelog }}" | sed '/- PR: #0/d' > changelog.md
+          echo "${{ steps.changelog.outputs.changelog }}" | sed '/- PR: #0/d' > changelog.md
           cat changelog.md
         id: save_changelog
 
       - name: Creating Release
         uses: ncipollo/release-action@v1.14.0
         with:
-          tag: ${{ needs.prepare_release.outputs.new-tag }}
-          name: Release ${{ needs.prepare_release.outputs.new-tag }}
+          tag: ${{ env.NEW_TAG }}
+          name: Release ${{ env.NEW_TAG }}
           bodyFile: changelog.md
           makeLatest: "latest"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy:
-    name: Deploy Service
-    permissions: write-all
-    environment: aws
-    needs: [build, prepare_release]
-    runs-on: ubuntu-latest
-    env:
-      SSH_USER: ${{ secrets.SSH_USER }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_PATH: ${{ secrets.SSH_PATH }}
-      SSH_KEY:  ${{ secrets.SSH_KEY }}
-      ENV_FILE: ${{ secrets.ENV_FILE }}
-      DEPLOY:   ${{ vars.DEPLOY }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Pull latest changes
-        run: |
-          git pull origin ${{ github.ref_name }}
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: service-jar
-
-      - name: Artifact rename
-        run: |
-          echo "Renaming artifact jar"
-          mv *.jar ${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}-${{  needs.prepare_release.outputs.new-tag }}.jar
 
 
       - name: Deploy
@@ -230,8 +175,10 @@ jobs:
           fi
 
           echo "Deploying service jar to server"
-          
+          cd build/libs
           artifact_name=$(ls *.jar)
+          cd ../..
+          cp build/libs/$artifact_name $artifact_name
           
           echo "$SSH_KEY" > key.pem
           chmod 600 key.pem
@@ -247,23 +194,12 @@ jobs:
             echo "Missing service jar"
             exit 1
           fi
-          
-           ssh -o StrictHostKeyChecking=no -i key.pem $SSH_USER@$SSH_HOST "mkdir -p $SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}/build/libs"
+          ssh -o StrictHostKeyChecking=no -i key.pem $SSH_USER@$SSH_HOST "cd $SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/} ; rm -r build/libs/*"
+          ssh -o StrictHostKeyChecking=no -i key.pem $SSH_USER@$SSH_HOST "mkdir -p $SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}/build/libs"
           
           scp -o StrictHostKeyChecking=no -i key.pem *.jar $SSH_USER@$SSH_HOST:$SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}/build/libs/$artifact_name
           scp -o StrictHostKeyChecking=no -i key.pem docker-compose.yml $SSH_USER@$SSH_HOST:$SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}/docker-compose.yml
           scp -o StrictHostKeyChecking=no -i key.pem .env $SSH_USER@$SSH_HOST:$SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}/.env
           scp -o StrictHostKeyChecking=no -i key.pem upservice.sh $SSH_USER@$SSH_HOST:$SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}/upservice.sh
           
-          ssh -o StrictHostKeyChecking=no -i key.pem $SSH_USER@$SSH_HOST "cd $SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/} ; sudo chmod +x upservice.sh ; ./upservice.sh"
-
-  clean:
-    runs-on: ubuntu-latest
-    needs: [ build, prepare_release, release, deploy ]
-    if: always()
-    name: Clean up
-    steps:
-      - name: Delete artifact
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: service-jar
+          ssh -o StrictHostKeyChecking=no -i key.pem $SSH_USER@$SSH_HOST "cd $SSH_PATH${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/} ; sudo chmod +x upservice.sh ; ./upservice.sh"
