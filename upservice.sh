@@ -2,9 +2,9 @@
 
 
 # Ferma il container Docker
-docker-compose stop
+docker compose stop
 
-running_containers=$(docker-compose ps -q)
+running_containers=$(docker compose ps -q)
 
 # Controlla se il container Docker si è fermato correttamente
 if [ "$running_containers" ]; then
@@ -16,7 +16,7 @@ if [ "$running_containers" ]; then
 fi
 
 # Rimuove il container Docker
-docker-compose down
+docker compose down
 
 # Riavvia il container Docker
-docker-compose up -d
+docker compose up -d

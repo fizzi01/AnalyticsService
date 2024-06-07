@@ -1,7 +1,4 @@
-version: "3.8"
-
 services:
-
   analytics-service:
     image: openjdk:22-jdk-oracle
     container_name: analyticsimage
@@ -33,7 +30,6 @@ services:
 
 networks:
   greenspot-net:
-    name: greenspot_net
 
 volumes:
     mongo_analytics:
