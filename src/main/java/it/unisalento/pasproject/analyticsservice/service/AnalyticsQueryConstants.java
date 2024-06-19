@@ -25,6 +25,10 @@ public class AnalyticsQueryConstants {
     public static final String START_DATE_FIELD = "startDate";
     public static final String END_DATE_FIELD = "endDate";
 
+    public static final String RES_TASK_ID_FIELD = "taskId";
+    public static final String ASSIGNMENT_TASK_ID_FIELD = "taskId";
+    public static final String IS_COMPLETE_FIELD = "isComplete";
+
     public static final String USER_EMAIL_FIELD = "userEmail";
     public static final String TOTAL_TIME_SPENT_FIELD = "totalTimeSpent";
     public static final String TASKS_ONGOING_FIELD = "tasksOngoing";

@@ -1,13 +1,18 @@
 package it.unisalento.pasproject.analyticsservice.service;
 
+import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.dto.AnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.MemberAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.UserAnalyticsDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
+
+import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.*;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -17,6 +22,9 @@ public class CalculateAnalyticsService {
 
     private final MongoTemplate mongoTemplate;
 
+    //LOgger factory
+    private static final Logger LOGGER = LoggerFactory.getLogger(CalculateAnalyticsService.class);
+
     @Autowired
     public CalculateAnalyticsService(MongoTemplate mongoTemplate) {
 
@@ -24,40 +32,40 @@ public class CalculateAnalyticsService {
     }
 
     public Optional<MemberAnalyticsDTO> getMemberAnalytics(String memberEmail) {
-        MatchOperation matchOperation = Aggregation.match(Criteria.where("memberEmail").is(memberEmail));
+        MatchOperation matchOperation = Aggregation.match(Criteria.where(EMAIL_MEMBER_FIELD).is(memberEmail));
 
         ProjectionOperation projectOperation = Aggregation.project()
-                .andInclude("memberEmail")
-                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true))
-                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("workDuration")
-                .andInclude("assignedEnergyConsumptionPerHour","hasCompleted")
-                .and(ArithmeticOperators.Add.valueOf("assignedSingleScore")
-                        .add("assignedMultiScore")
-                        .add("assignedOpenclScore")
-                        .add("assignedVulkanScore")
-                        .add("assignedCudaScore")).as("totalComputingPower")
-                .andInclude("assignedTime");
+                .andInclude(EMAIL_MEMBER_FIELD)
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)).otherwise(0)).as(WORK_DURATION_FIELD)
+                .andInclude(ASSIGNED_ENERGY_CONSUMPTION_PER_HOUR_FIELD,HAS_COMPLETED_FIELD)
+                .and(ArithmeticOperators.Add.valueOf(ASSIGNED_SINGLE_SCORE_FIELD)
+                        .add(ASSIGNED_MULTI_SCORE_FIELD)
+                        .add(ASSIGNED_OPENCL_SCORE_FIELD)
+                        .add(ASSIGNED_VULKAN_SCORE_FIELD)
+                        .add(ASSIGNED_CUDA_SCORE_FIELD)).as(TOTAL_COMPUTING_POWER_FIELD)
+                .andInclude(ASSIGNED_TIME_FIELD);
 
-        GroupOperation groupOperation = Aggregation.group("memberEmail")
-                .first("memberEmail").as("memberEmail")
-                .sum("workDuration").as("totalWorkDuration")
-                .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
-                .sum("totalComputingPower").as("computingPower")
-                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
-                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(false)).then(1).otherwise(0)).as("tasksInProgress")
-                .count().as("tasksAssigned")
-                .min("assignedTime").as("startDate")
-                .max("assignedTime").as("endDate");
+        GroupOperation groupOperation = Aggregation.group(EMAIL_MEMBER_FIELD)
+                .first(EMAIL_MEMBER_FIELD).as(EMAIL_MEMBER_FIELD)
+                .sum(WORK_DURATION_FIELD).as(TOTAL_WORK_DURATION_FIELD)
+                .sum(ASSIGNED_ENERGY_CONSUMPTION_PER_HOUR_FIELD).as(ENERGY_CONSUMED_FIELD)
+                .sum(TOTAL_COMPUTING_POWER_FIELD).as(COMPUTING_POWER_FIELD)
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(true)).then(1).otherwise(0)).as(TASKS_COMPLETED_FIELD)
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(false)).then(1).otherwise(0)).as(TASKS_IN_PROGRESS_FIELD)
+                .count().as(TASKS_ASSIGNED_FIELD)
+                .min(ASSIGNED_TIME_FIELD).as(START_DATE_FIELD)
+                .max(ASSIGNED_TIME_FIELD).as(END_DATE_FIELD);
 
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 projectOperation,
                 groupOperation,
-                Aggregation.project("memberEmail", "totalWorkDuration", "energyConsumed", "computingPower", "tasksCompleted", "tasksInProgress", "tasksAssigned", "startDate", "endDate")
-                        .andExpression("totalWorkDuration / 3600000").as("workHours") // Convert milliseconds to hours
+                Aggregation.project(EMAIL_MEMBER_FIELD, TOTAL_WORK_DURATION_FIELD, ENERGY_CONSUMED_FIELD, COMPUTING_POWER_FIELD, TASKS_COMPLETED_FIELD, TASKS_IN_PROGRESS_FIELD, TASKS_ASSIGNED_FIELD, START_DATE_FIELD, END_DATE_FIELD)
+                        .andExpression(TOTAL_WORK_DURATION_FIELD + " / 3600000").as(WORK_HOURS_FIELD) // Convert milliseconds to hours
         );
 
-        AggregationResults<MemberAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assigned_resource_analytics", MemberAnalyticsDTO.class);
+        AggregationResults<MemberAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(AssignedResource.class), MemberAnalyticsDTO.class);
 
         return results.getMappedResults().stream().findFirst();
     }
@@ -78,52 +86,91 @@ public class CalculateAnalyticsService {
         }
 
         ProjectionOperation projectOperation = Aggregation.project()
-                .andInclude("memberEmail")
-                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true))
-                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("workDuration")
-                .andInclude("assignedEnergyConsumptionPerHour","hasCompleted")
-                .and(ArithmeticOperators.Add.valueOf("assignedSingleScore")
-                        .add("assignedMultiScore")
-                        .add("assignedOpenclScore")
-                        .add("assignedVulkanScore")
-                        .add("assignedCudaScore")).as("totalComputingPower")
-                .andInclude("assignedTime");
+                .andInclude(EMAIL_MEMBER_FIELD)
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)).otherwise(0)).as(WORK_DURATION_FIELD)
+                .andInclude(ASSIGNED_ENERGY_CONSUMPTION_PER_HOUR_FIELD,HAS_COMPLETED_FIELD)
+                .and(ArithmeticOperators.Add.valueOf(ASSIGNED_SINGLE_SCORE_FIELD)
+                        .add(ASSIGNED_MULTI_SCORE_FIELD)
+                        .add(ASSIGNED_OPENCL_SCORE_FIELD)
+                        .add(ASSIGNED_VULKAN_SCORE_FIELD)
+                        .add(ASSIGNED_CUDA_SCORE_FIELD)).as(TOTAL_COMPUTING_POWER_FIELD)
+                .andInclude(ASSIGNED_TIME_FIELD);
 
-        GroupOperation groupOperation = Aggregation.group("memberEmail")
-                .first("memberEmail").as("memberEmail")
-                .sum("workDuration").as("totalWorkDuration")
-                .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
-                .sum("totalComputingPower").as("computingPower")
-                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
-                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(false)).then(1).otherwise(0)).as("tasksInProgress")
-                .count().as("tasksAssigned")
-                .min("assignedTime").as("startDate")
-                .max("assignedTime").as("endDate");
+        GroupOperation groupOperation = Aggregation.group(EMAIL_MEMBER_FIELD)
+                .first(EMAIL_MEMBER_FIELD).as(EMAIL_MEMBER_FIELD)
+                .sum(WORK_DURATION_FIELD).as(TOTAL_WORK_DURATION_FIELD)
+                .sum(ASSIGNED_ENERGY_CONSUMPTION_PER_HOUR_FIELD).as(ENERGY_CONSUMED_FIELD)
+                .sum(TOTAL_COMPUTING_POWER_FIELD).as(COMPUTING_POWER_FIELD)
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(true)).then(1).otherwise(0)).as(TASKS_COMPLETED_FIELD)
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(false)).then(1).otherwise(0)).as(TASKS_IN_PROGRESS_FIELD)
+                .count().as(TASKS_ASSIGNED_FIELD)
+                .min(ASSIGNED_TIME_FIELD).as(START_DATE_FIELD)
+                .max(ASSIGNED_TIME_FIELD).as(END_DATE_FIELD);
 
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 projectOperation,
                 groupOperation,
-                Aggregation.project("memberEmail", "totalWorkDuration", "energyConsumed", "computingPower", "tasksCompleted", "tasksInProgress", "tasksAssigned", "startDate", "endDate")
-                        .andExpression("totalWorkDuration / 3600000").as("workHours") // Convert milliseconds to hours
+                Aggregation.project(EMAIL_MEMBER_FIELD, TOTAL_WORK_DURATION_FIELD, ENERGY_CONSUMED_FIELD, COMPUTING_POWER_FIELD, TASKS_COMPLETED_FIELD, TASKS_IN_PROGRESS_FIELD, TASKS_ASSIGNED_FIELD, START_DATE_FIELD, END_DATE_FIELD)
+                        .andExpression(TOTAL_WORK_DURATION_FIELD + " / 3600000").as(WORK_HOURS_FIELD) // Convert milliseconds to hours
         );
 
-        AggregationResults<MemberAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assigned_resource_analytics", MemberAnalyticsDTO.class);
+        AggregationResults<MemberAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(AssignedResource.class), MemberAnalyticsDTO.class);
+
+        return results.getMappedResults().stream().findFirst();
+    }
+
+    public Optional<UserAnalyticsDTO> getTaskUserAnalytics(String taskId){
+MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK_ID_FIELD).is(taskId));
+
+        LookupOperation lookupOperation = Aggregation.lookup(mongoTemplate.getCollectionName(AssignedResource.class), RES_TASK_ID_FIELD, ASSIGNMENT_TASK_ID_FIELD, "assignedResources");
+
+        ProjectionOperation projectOperation = Aggregation.project()
+                .andInclude(ASSIGNMENT_TASK_ID_FIELD)
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(IS_COMPLETE_FIELD).equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)).otherwise(0)).as("timeSpent")
+                .andInclude(ASSIGNED_TIME_FIELD, COMPLETED_TIME_FIELD, IS_COMPLETE_FIELD)
+                .and("assignedResources.assignedEnergyConsumptionPerHour").as(ASSIGNED_ENERGY_CONSUMPTION_PER_HOUR_FIELD)
+                .and(ArithmeticOperators.Add.valueOf("assignedResources.assignedSingleScore")
+                        .add("assignedResources.assignedMultiScore")
+                        .add("assignedResources.assignedOpenclScore")
+                        .add("assignedResources.assignedVulkanScore")
+                        .add("assignedResources.assignedCudaScore")).as("totalComputingPower");
+
+        GroupOperation groupOperation = Aggregation.group(ASSIGNMENT_TASK_ID_FIELD)
+                .first(ASSIGNMENT_TASK_ID_FIELD).as(ASSIGNMENT_TASK_ID_FIELD)
+                .sum("timeSpent").as("totalTimeSpent")
+                .sum("assignedEnergyConsumptionPerHour").as("energySaved")
+                .sum("totalComputingPower").as("computingPowerUsed");
+
+        Aggregation aggregation = Aggregation.newAggregation(
+                matchOperation,
+                lookupOperation,
+                Aggregation.unwind("assignedResources", true),
+                projectOperation,
+                groupOperation,
+                Aggregation.project(ASSIGNMENT_TASK_ID_FIELD, "totalTimeSpent", "energySaved", "computingPowerUsed")
+                        .andExpression("totalTimeSpent / 3600000").as("timeSpentOnTasks"));// Convert milliseconds to hours
+
+        LOGGER.info("Aggregation: {} " , aggregation);
+
+        AggregationResults<UserAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assignment_analytics", UserAnalyticsDTO.class);
 
         return results.getMappedResults().stream().findFirst();
     }
 
     public Optional<UserAnalyticsDTO> getUserAnalytics(String emailUtente) {
-        MatchOperation matchOperation = Aggregation.match(Criteria.where("emailUtente").is(emailUtente));
+        MatchOperation matchOperation = Aggregation.match(Criteria.where(USER_EMAIL_FIELD).is(emailUtente));
 
-        LookupOperation lookupOperation = Aggregation.lookup("assigned_resource_analytics", "taskId", "taskId", "assignedResources");
+        LookupOperation lookupOperation = Aggregation.lookup(mongoTemplate.getCollectionName(AssignedResource.class), RES_TASK_ID_FIELD, ASSIGNMENT_TASK_ID_FIELD, "assignedResources");
 
         ProjectionOperation projectOperation = Aggregation.project()
-                .andInclude("emailUtente")
-                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true))
-                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("timeSpent")
-                .andInclude("assignedTime", "completedTime", "isComplete")
-                .and("assignedResources.assignedEnergyConsumptionPerHour").as("assignedEnergyConsumptionPerHour")
+                .andInclude(USER_EMAIL_FIELD)
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(IS_COMPLETE_FIELD).equalToValue(true))
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)).otherwise(0)).as("timeSpent")
+                .andInclude(ASSIGNED_TIME_FIELD, COMPLETED_TIME_FIELD, IS_COMPLETE_FIELD)
+                .and("assignedResources.assignedEnergyConsumptionPerHour").as(ASSIGNED_ENERGY_CONSUMPTION_PER_HOUR_FIELD)
                 .and(ArithmeticOperators.Add.valueOf("assignedResources.assignedSingleScore")
                         .add("assignedResources.assignedMultiScore")
                         .add("assignedResources.assignedOpenclScore")
@@ -170,6 +217,7 @@ public class CalculateAnalyticsService {
             matchOperation = Aggregation.match(Criteria.where("emailUtente").is(emailUtente)
                     .and("assignedTime").lte(endDate));
         }
+
 
         LookupOperation lookupOperation = Aggregation.lookup("assigned_resource_analytics", "taskId", "taskId", "assignedResources");
 

@@ -1,12 +1,15 @@
 package it.unisalento.pasproject.analyticsservice.controller;
 
+import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import it.unisalento.pasproject.analyticsservice.dto.AnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.MemberAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.UserAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.exceptions.BadFormatRequestException;
 import it.unisalento.pasproject.analyticsservice.exceptions.MissingDataException;
+import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
 import it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants;
 import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
+import it.unisalento.pasproject.analyticsservice.service.UserCheckService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static it.unisalento.pasproject.analyticsservice.security.SecurityConstants.*;
@@ -27,11 +31,22 @@ import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryCo
 public class AnalyticsController {
 
     private final CalculateAnalyticsService calculateAnalyticsService;
-
+    private final UserCheckService userCheckService;
+    private final AssignmentAnalyticsRepository assignmentAnalyticsRepository;
 
     @Autowired
-    public AnalyticsController(CalculateAnalyticsService calculateAnalyticsService) {
+    public AnalyticsController(CalculateAnalyticsService calculateAnalyticsService,
+                               UserCheckService userCheckService,
+                               AssignmentAnalyticsRepository assignmentAnalyticsRepository) {
         this.calculateAnalyticsService = calculateAnalyticsService;
+        this.userCheckService = userCheckService;
+        this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
+    }
+
+    @GetMapping("/get")
+    @Secured({ROLE_ADMIN})
+    public List<AssignmentAnalytics> getAnalytics() {
+       return assignmentAnalyticsRepository.findAll();
     }
 
     @GetMapping("/user/get")
@@ -60,14 +75,28 @@ public class AnalyticsController {
 
     @GetMapping("/user/get/filter")
     @Secured({ROLE_UTENTE})
-    public UserAnalyticsDTO getUserAnalyticsByDate(@RequestParam String startDate, @RequestParam String endDate) {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String emailUtente = userDetails.getUsername();
-        LocalDateTime start = LocalDateTime.parse(startDate);
-        LocalDateTime end = LocalDateTime.parse(endDate);
+    public UserAnalyticsDTO getUserAnalyticsByDate(@RequestParam(required = false) String taskId,@RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate) {
+        String emailUtente = userCheckService.getCurrentUserEmail();
+        LocalDateTime start = null;
+        LocalDateTime end = null;
+        try {
+            if (startDate != null) {
+                start = LocalDateTime.parse(startDate);
+            } else if (endDate != null) {
+                end = LocalDateTime.now();
+            }
+        } catch (Exception e) {
+            throw new MissingDataException("Wrong date format. Please use yyyy-MM-ddTHH:mm:ss format");
+        }
 
         try {
-            Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente, start, end);
+            Optional<UserAnalyticsDTO> userAnalyticsDTO;
+
+            if(taskId == null) {
+               userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente, start, end);
+            }else{
+                userAnalyticsDTO = calculateAnalyticsService.getTaskUserAnalytics(taskId);
+            }
 
             if (userAnalyticsDTO.isEmpty()) {
                 throw new MissingDataException("No data found for user " + emailUtente);
