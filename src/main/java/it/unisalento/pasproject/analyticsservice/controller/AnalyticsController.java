@@ -1,9 +1,7 @@
 package it.unisalento.pasproject.analyticsservice.controller;
 
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
-import it.unisalento.pasproject.analyticsservice.dto.AnalyticsDTO;
-import it.unisalento.pasproject.analyticsservice.dto.MemberAnalyticsDTO;
-import it.unisalento.pasproject.analyticsservice.dto.UserAnalyticsDTO;
+import it.unisalento.pasproject.analyticsservice.dto.*;
 import it.unisalento.pasproject.analyticsservice.exceptions.BadFormatRequestException;
 import it.unisalento.pasproject.analyticsservice.exceptions.MissingDataException;
 import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +42,7 @@ public class AnalyticsController {
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
     }
 
-    @GetMapping("/get")
+    @GetMapping("/debug/get")
     @Secured({ROLE_ADMIN})
     public List<AssignmentAnalytics> getAnalytics() {
        return assignmentAnalyticsRepository.findAll();
@@ -69,6 +68,36 @@ public class AnalyticsController {
             throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
             throw new MissingDataException(AnalyticsQueryConstants.ERROR + e.getMessage());
+        }
+
+    }
+
+    @GetMapping("/user/get/task/all")
+    @Secured({ROLE_UTENTE})
+    public ListTaskAnalytics getUserAnalyticsByTask() {
+        String emailUtente = userCheckService.getCurrentUserEmail();
+        try {
+            List<AssignmentAnalytics> allAssignments = assignmentAnalyticsRepository.findAllByEmailUtente(emailUtente);
+
+            ListTaskAnalytics listDTO = new ListTaskAnalytics();
+            List<TaskAnalyticsDTO> list = new ArrayList<>();
+
+            for (AssignmentAnalytics assignment : allAssignments) {
+                Optional<UserAnalyticsDTO> userAnalyticsDTO1 = calculateAnalyticsService.getTaskUserAnalytics(assignment.getTaskId());
+                TaskAnalyticsDTO taskAnalyticsDTO = new TaskAnalyticsDTO();
+                if (userAnalyticsDTO1.isPresent()) {
+                    taskAnalyticsDTO.setTaskId(assignment.getTaskId());
+                    taskAnalyticsDTO.setEnergySaved(userAnalyticsDTO1.get().getEnergySaved());
+                    taskAnalyticsDTO.setComputingPowerUsed(userAnalyticsDTO1.get().getComputingPowerUsed());
+                    list.add(taskAnalyticsDTO);
+                }
+            }
+
+            listDTO.setList(list);
+            return listDTO;
+
+        } catch (Exception e) {
+            throw new MissingDataException(ERROR + e.getMessage());
         }
 
     }
