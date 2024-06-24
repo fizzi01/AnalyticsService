@@ -53,8 +53,7 @@ public class AnalyticsController {
     public UserAnalyticsDTO getUserAnalytics() {
 
 
-        String emailUtente = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-
+        String emailUtente = userCheckService.getCurrentUserEmail();
         try {
             Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente);
 

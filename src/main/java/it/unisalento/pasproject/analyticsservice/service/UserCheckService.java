@@ -83,7 +83,7 @@ public class UserCheckService {
      * @return true if the current user is an administrator, false otherwise
      */
     public Boolean isAdministrator(){
-        String currentRole = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+        String currentRole = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toArray()[0].toString();
         return currentRole.equalsIgnoreCase(ROLE_ADMIN);
     }
 }
