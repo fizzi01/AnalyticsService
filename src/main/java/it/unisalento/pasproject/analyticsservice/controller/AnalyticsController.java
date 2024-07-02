@@ -215,7 +215,13 @@ public class AnalyticsController {
     @Secured({ROLE_ADMIN})
     public AnalyticsDTO getAllAnalytics() {
         try {
-            return calculateAnalyticsService.getOverallAnalytics();
+            Optional<AnalyticsDTO> analyticsDTO = calculateAnalyticsService.getOverallAnalytics();
+
+            if (analyticsDTO.isEmpty()) {
+                throw new MissingDataException(ERROR + "No data found");
+            }
+
+            return analyticsDTO.get();
         } catch (Exception e) {
             throw new MissingDataException(ERROR + e.getMessage());
         }

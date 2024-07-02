@@ -265,7 +265,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
         return results.getMappedResults().stream().findFirst();
     }
 
-    public AnalyticsDTO getOverallAnalytics() {
+    public Optional<AnalyticsDTO> getOverallAnalytics() {
         LookupOperation lookupOperation = Aggregation.lookup("assignment_analytics", "taskId", "taskId", "assignments");
 
         ProjectionOperation projectOperation = Aggregation.project()
@@ -309,7 +309,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
 
         analyticsDTO = getAssignedTasksInfo(analyticsDTO, null, null);
 
-        return analyticsDTO;
+        return Optional.ofNullable(analyticsDTO);
     }
 
     private AnalyticsDTO getAssignedTasksInfo(AnalyticsDTO analyticsDTO, LocalDateTime startDate, LocalDateTime endDate) {
