@@ -1,9 +1,11 @@
 package it.unisalento.pasproject.analyticsservice.controller;
 
+import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import it.unisalento.pasproject.analyticsservice.dto.*;
 import it.unisalento.pasproject.analyticsservice.exceptions.BadFormatRequestException;
 import it.unisalento.pasproject.analyticsservice.exceptions.MissingDataException;
+import it.unisalento.pasproject.analyticsservice.repositories.AssignedResourceRepository;
 import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
 import it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants;
 import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
@@ -31,21 +33,32 @@ public class AnalyticsController {
 
     private final CalculateAnalyticsService calculateAnalyticsService;
     private final UserCheckService userCheckService;
+
     private final AssignmentAnalyticsRepository assignmentAnalyticsRepository;
+    private final AssignedResourceRepository assignedResourceRepository;
 
     @Autowired
     public AnalyticsController(CalculateAnalyticsService calculateAnalyticsService,
                                UserCheckService userCheckService,
-                               AssignmentAnalyticsRepository assignmentAnalyticsRepository) {
+                               AssignmentAnalyticsRepository assignmentAnalyticsRepository,
+                               AssignedResourceRepository assignedResourceRepository
+    ) {
         this.calculateAnalyticsService = calculateAnalyticsService;
         this.userCheckService = userCheckService;
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
+        this.assignedResourceRepository = assignedResourceRepository;
     }
 
-    @GetMapping("/debug/get")
+    @GetMapping("/debug/get/tasks")
     @Secured({ROLE_ADMIN})
     public List<AssignmentAnalytics> getAnalytics() {
        return assignmentAnalyticsRepository.findAll();
+    }
+
+    @GetMapping("/debug/get/res")
+    @Secured({ROLE_ADMIN})
+    public List<AssignedResource> getRes() {
+       return assignedResourceRepository.findAll();
     }
 
     @GetMapping("/user/get")

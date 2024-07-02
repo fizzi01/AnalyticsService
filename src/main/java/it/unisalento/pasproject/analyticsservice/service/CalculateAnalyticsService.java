@@ -1,9 +1,11 @@
 package it.unisalento.pasproject.analyticsservice.service;
 
 import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
+import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import it.unisalento.pasproject.analyticsservice.dto.AnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.MemberAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.dto.UserAnalyticsDTO;
+import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,20 +17,24 @@ import org.springframework.stereotype.Service;
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class CalculateAnalyticsService {
 
     private final MongoTemplate mongoTemplate;
+    private final AssignmentAnalyticsRepository assignmentAnalyticsRepository;
 
     //LOgger factory
     private static final Logger LOGGER = LoggerFactory.getLogger(CalculateAnalyticsService.class);
 
     @Autowired
-    public CalculateAnalyticsService(MongoTemplate mongoTemplate) {
-
+    public CalculateAnalyticsService(MongoTemplate mongoTemplate,
+                                        AssignmentAnalyticsRepository assignmentAnalyticsRepository
+    ) {
         this.mongoTemplate = mongoTemplate;
+        this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
     }
 
     public Optional<MemberAnalyticsDTO> getMemberAnalytics(String memberEmail) {
@@ -263,11 +269,11 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
         LookupOperation lookupOperation = Aggregation.lookup("assignment_analytics", "taskId", "taskId", "assignments");
 
         ProjectionOperation projectOperation = Aggregation.project()
-                .andInclude("assignedEnergyConsumptionPerHour", "assignedSingleScore", "assignedMultiScore", "assignedOpenclScore", "assignedVulkanScore", "assignedCudaScore", "memberEmail", "assignedTime", "completedTime", "isComplete")
-                .andExpression("{$sum: '$assignments'}").as("assignments")
+                .andInclude("taskId","assignedTime","completedTime","assignedEnergyConsumptionPerHour", "assignedSingleScore", "assignedMultiScore", "assignedOpenclScore", "assignedVulkanScore", "assignedCudaScore", "memberEmail", "emailUtente", "hasCompleted")
+                .andExpression("{$sum: '$assignments'}").as("tasksSubmitted")
                 .andExpression("assignedTime").as("assignedTime")
                 .andExpression("completedTime").as("completedTime")
-                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true))
+                .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true))
                         .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("workDuration")
                 .and(ArithmeticOperators.Add.valueOf("assignedSingleScore")
                         .add("assignedMultiScore")
@@ -279,8 +285,8 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
                 .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
                 .sum("computingPower").as("computingPowerUsed")
                 .addToSet("memberEmail").as("uniqueMembers")
-                .addToSet("assignments.emailUtente").as("uniqueUsers")
-                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("assignments.isComplete").equalToValue(true))
+                .addToSet("emailUtente").as("uniqueUsers")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasCompleted").equalToValue(true))
                         .then(1).otherwise(0)).as("tasksCompleted")
                 .count().as("tasksSubmitted")
                 .sum("workDuration").as("totalWorkDuration")
@@ -292,14 +298,49 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
                 projectOperation,
                 groupOperation,
                 Aggregation.project("energyConsumed", "computingPowerUsed", "tasksSubmitted", "tasksCompleted", "startDate", "endDate")
-                        .andExpression("totalWorkDuration / 3600000").as("workHours") // Convert milliseconds to hours
+                        .andExpression("totalWorkDuration / 360000").as("workHours") // Convert milliseconds to hours
                         .and(ArrayOperators.Size.lengthOfArray("uniqueMembers")).as("activeMemberCount")
                         .and(ArrayOperators.Size.lengthOfArray("uniqueUsers")).as("activeUserCount")
         );
 
         AggregationResults<AnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assigned_resource_analytics", AnalyticsDTO.class);
 
-        return results.getUniqueMappedResult();
+        AnalyticsDTO analyticsDTO = results.getUniqueMappedResult();
+
+        analyticsDTO = getAssignedTasksInfo(analyticsDTO, null, null);
+
+        return analyticsDTO;
+    }
+
+    private AnalyticsDTO getAssignedTasksInfo(AnalyticsDTO analyticsDTO, LocalDateTime startDate, LocalDateTime endDate) {
+        if(analyticsDTO == null) {
+            return null;
+        }
+
+        List<AssignmentAnalytics> allAssignments = assignmentAnalyticsRepository.findAll();
+
+        //Find number of unique members email
+        analyticsDTO.setActiveUserCount((int) allAssignments.stream().map(AssignmentAnalytics::getEmailUtente).distinct().count());
+
+        //Find number of tasks submitted
+        analyticsDTO.setTasksSubmitted(assignmentAnalyticsRepository.findAll().size());
+
+        analyticsDTO.setTasksCompleted((int) allAssignments.stream().filter(AssignmentAnalytics::isComplete).count());
+
+        if(startDate != null && endDate != null) {
+            analyticsDTO.setStartDate(startDate);
+            analyticsDTO.setEndDate(endDate);
+        } else {
+            try{
+                analyticsDTO.setStartDate(allAssignments.stream().map(AssignmentAnalytics::getAssignedTime).min(LocalDateTime::compareTo).orElse(null));
+                analyticsDTO.setEndDate(allAssignments.stream().map(AssignmentAnalytics::getAssignedTime).max(LocalDateTime::compareTo).orElse(null));
+            }catch (Exception e){
+                LOGGER.error("Error while calculating start and end date for analytics");
+            }
+        }
+
+        return analyticsDTO;
+
     }
 
     public AnalyticsDTO getOverallAnalytics(LocalDateTime startDate, LocalDateTime endDate) {
@@ -308,7 +349,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
         MatchOperation matchOperation = Aggregation.match(Criteria.where("assignedTime").gte(startDate).and("assignedTime").lte(endDate));
 
         ProjectionOperation projectOperation = Aggregation.project()
-                .andInclude("assignedEnergyConsumptionPerHour", "assignedSingleScore", "assignedMultiScore", "assignedOpenclScore", "assignedVulkanScore", "assignedCudaScore", "memberEmail", "assignedTime", "completedTime", "isComplete")
+                .andInclude("taskId","assignedEnergyConsumptionPerHour", "assignedSingleScore", "assignedMultiScore", "assignedOpenclScore", "assignedVulkanScore", "assignedCudaScore", "memberEmail", "assignedTime", "completedTime", "isComplete")
                 .andExpression("{$sum: '$assignments'}").as("assignments")
                 .andExpression("assignedTime").as("assignedTime")
                 .andExpression("completedTime").as("completedTime")
@@ -345,6 +386,10 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
 
         AggregationResults<AnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assigned_resource_analytics", AnalyticsDTO.class);
 
-        return results.getUniqueMappedResult();
+        AnalyticsDTO analyticsDTO = results.getUniqueMappedResult();
+
+        analyticsDTO = getAssignedTasksInfo(analyticsDTO, startDate, endDate);
+
+        return analyticsDTO;
     }
 }

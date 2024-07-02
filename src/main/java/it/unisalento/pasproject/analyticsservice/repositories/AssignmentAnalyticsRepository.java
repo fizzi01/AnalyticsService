@@ -3,6 +3,7 @@ package it.unisalento.pasproject.analyticsservice.repositories;
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,4 +11,5 @@ public interface AssignmentAnalyticsRepository extends MongoRepository<Assignmen
     Optional<AssignmentAnalytics> findByTaskId(String taskId);
 
     List<AssignmentAnalytics> findAllByEmailUtente(String emailUtente);
+
 }

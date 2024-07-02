@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 public class AssignedAnalyticsDTO {
 
+    private String id;
     private String taskId;
     private String emailUtente;
 

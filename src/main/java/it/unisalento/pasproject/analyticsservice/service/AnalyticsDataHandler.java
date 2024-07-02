@@ -41,13 +41,6 @@ public class AnalyticsDataHandler {
 
             if(message.getAssignment() != null){
                 AssignmentAnalytics assignmentAnalytics = getFromDto(message.getAssignment());
-
-                Optional<AssignmentAnalytics> existingAssignmentAnalytics =
-                        getExistingAssignmentAnalytics(assignmentAnalytics.getTaskId());
-
-                //Recupero l'id del documento se presente
-                existingAssignmentAnalytics.ifPresent(analytics -> assignmentAnalytics.setId(analytics.getId()));
-
                 assignmentAnalyticsRepository.save(assignmentAnalytics);
             }
         }
@@ -85,6 +78,9 @@ public class AnalyticsDataHandler {
 
     public AssignmentAnalytics getFromDto(AssignedAnalyticsDTO assignedAnalyticsDTO){
         AssignmentAnalytics assignmentAnalytics = new AssignmentAnalytics();
+
+        if(assignedAnalyticsDTO.getId() != null)
+            assignmentAnalytics.setId(assignedAnalyticsDTO.getId());
 
         assignmentAnalytics.setTaskId(assignedAnalyticsDTO.getTaskId());
         assignmentAnalytics.setEmailUtente(assignedAnalyticsDTO.getEmailUtente());
