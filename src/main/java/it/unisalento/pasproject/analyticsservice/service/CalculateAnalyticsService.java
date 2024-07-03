@@ -31,7 +31,7 @@ public class CalculateAnalyticsService {
 
     @Autowired
     public CalculateAnalyticsService(MongoTemplate mongoTemplate,
-                                        AssignmentAnalyticsRepository assignmentAnalyticsRepository
+                                     AssignmentAnalyticsRepository assignmentAnalyticsRepository
     ) {
         this.mongoTemplate = mongoTemplate;
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
@@ -68,7 +68,7 @@ public class CalculateAnalyticsService {
                 projectOperation,
                 groupOperation,
                 Aggregation.project(EMAIL_MEMBER_FIELD, TOTAL_WORK_DURATION_FIELD, ENERGY_CONSUMED_FIELD, COMPUTING_POWER_FIELD, TASKS_COMPLETED_FIELD, TASKS_IN_PROGRESS_FIELD, TASKS_ASSIGNED_FIELD, START_DATE_FIELD, END_DATE_FIELD)
-                        .andExpression(TOTAL_WORK_DURATION_FIELD + " / 3600000").as(WORK_HOURS_FIELD) // Convert milliseconds to hours
+                        .andExpression(TOTAL_WORK_DURATION_FIELD + " / 60000").as(WORK_TIME_FIELD) // Convert milliseconds to minutes
         );
 
         AggregationResults<MemberAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(AssignedResource.class), MemberAnalyticsDTO.class);
@@ -119,7 +119,7 @@ public class CalculateAnalyticsService {
                 projectOperation,
                 groupOperation,
                 Aggregation.project(EMAIL_MEMBER_FIELD, TOTAL_WORK_DURATION_FIELD, ENERGY_CONSUMED_FIELD, COMPUTING_POWER_FIELD, TASKS_COMPLETED_FIELD, TASKS_IN_PROGRESS_FIELD, TASKS_ASSIGNED_FIELD, START_DATE_FIELD, END_DATE_FIELD)
-                        .andExpression(TOTAL_WORK_DURATION_FIELD + " / 3600000").as(WORK_HOURS_FIELD) // Convert milliseconds to hours
+                        .andExpression(TOTAL_WORK_DURATION_FIELD + " / 60000").as(WORK_TIME_FIELD) // Convert milliseconds to minutes
         );
 
         AggregationResults<MemberAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, mongoTemplate.getCollectionName(AssignedResource.class), MemberAnalyticsDTO.class);
@@ -157,7 +157,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
                 projectOperation,
                 groupOperation,
                 Aggregation.project(ASSIGNMENT_TASK_ID_FIELD, "totalTimeSpent", "energySaved", "computingPowerUsed")
-                        .andExpression("totalTimeSpent / 3600000").as("timeSpentOnTasks"));// Convert milliseconds to hours
+                        .andExpression("totalTimeSpent / 60000").as("timeSpentOnTasks"));// Convert milliseconds to minutes
 
         LOGGER.info("Aggregation: {} " , aggregation);
 
@@ -201,7 +201,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
                 projectOperation,
                 groupOperation,
                 Aggregation.project("userEmail", "totalTimeSpent", "tasksCompleted", "tasksOngoing", "tasksSubmitted", "startDate", "endDate", "energySaved", "computingPowerUsed")
-                        .andExpression("totalTimeSpent / 3600000").as("timeSpentOnTasks") // Convert milliseconds to hours
+                        .andExpression("totalTimeSpent / 60000").as("timeSpentOnTasks") // Convert milliseconds to minutes
         );
 
         AggregationResults<UserAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assignment_analytics", UserAnalyticsDTO.class);
@@ -257,7 +257,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
                 projectOperation,
                 groupOperation,
                 Aggregation.project("userEmail", "totalTimeSpent", "tasksCompleted", "tasksOngoing", "tasksSubmitted", "startDate", "endDate", "energySaved", "computingPowerUsed")
-                        .andExpression("totalTimeSpent / 3600000").as("timeSpentOnTasks") // Convert milliseconds to hours
+                        .andExpression("totalTimeSpent / 60000").as("timeSpentOnTasks") // Convert milliseconds to minutes
         );
 
         AggregationResults<UserAnalyticsDTO> results = mongoTemplate.aggregate(aggregation, "assignment_analytics", UserAnalyticsDTO.class);
@@ -298,7 +298,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
                 projectOperation,
                 groupOperation,
                 Aggregation.project("energyConsumed", "computingPowerUsed", "tasksSubmitted", "tasksCompleted", "startDate", "endDate")
-                        .andExpression("totalWorkDuration / 360000").as("workHours") // Convert milliseconds to hours
+                        .andExpression("totalWorkDuration / 60000").as("workMinutes") // Convert milliseconds to hours
                         .and(ArrayOperators.Size.lengthOfArray("uniqueMembers")).as("activeMemberCount")
                         .and(ArrayOperators.Size.lengthOfArray("uniqueUsers")).as("activeUserCount")
         );
@@ -343,7 +343,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
 
     }
 
-    public AnalyticsDTO getOverallAnalytics(LocalDateTime startDate, LocalDateTime endDate) {
+    public Optional<AnalyticsDTO> getOverallAnalytics(LocalDateTime startDate, LocalDateTime endDate) {
         LookupOperation lookupOperation = Aggregation.lookup("assignment_analytics", "taskId", "taskId", "assignments");
 
         MatchOperation matchOperation = Aggregation.match(Criteria.where("assignedTime").gte(startDate).and("assignedTime").lte(endDate));
@@ -379,7 +379,7 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
                 projectOperation,
                 groupOperation,
                 Aggregation.project("energyConsumed", "computingPowerUsed", "activeMemberCount", "activeUserCount", "tasksSubmitted", "tasksCompleted", "startDate", "endDate")
-                        .andExpression("totalWorkDuration / 3600000").as("workHours") // Convert milliseconds to hours
+                        .andExpression("totalWorkDuration / 60000").as("workMinutes") // Convert milliseconds to hours
                         .and(ArrayOperators.Size.lengthOfArray("uniqueMembers")).as("activeMemberCount")
                         .and(ArrayOperators.Size.lengthOfArray("uniqueUsers")).as("activeUserCount")
         );
@@ -390,6 +390,6 @@ MatchOperation matchOperation = Aggregation.match(Criteria.where(ASSIGNMENT_TASK
 
         analyticsDTO = getAssignedTasksInfo(analyticsDTO, startDate, endDate);
 
-        return analyticsDTO;
+        return Optional.ofNullable(analyticsDTO);
     }
 }

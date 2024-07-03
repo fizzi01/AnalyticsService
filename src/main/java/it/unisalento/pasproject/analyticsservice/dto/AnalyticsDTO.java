@@ -20,7 +20,7 @@ public class AnalyticsDTO {
     private int tasksSubmitted;
     private int tasksCompleted;
 
-    private double workHours;
+    private double workMinutes;
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;

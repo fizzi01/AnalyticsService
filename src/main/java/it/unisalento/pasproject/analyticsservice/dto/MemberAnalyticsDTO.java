@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class MemberAnalyticsDTO {
 
     private String memberEmail;
-    private double workHours;
+    private double workMinutes;
 
     private double energyConsumed;
     private double computingPower;

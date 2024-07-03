@@ -49,17 +49,6 @@ public class AnalyticsController {
         this.assignedResourceRepository = assignedResourceRepository;
     }
 
-    @GetMapping("/debug/get/tasks")
-    @Secured({ROLE_ADMIN})
-    public List<AssignmentAnalytics> getAnalytics() {
-       return assignmentAnalyticsRepository.findAll();
-    }
-
-    @GetMapping("/debug/get/res")
-    @Secured({ROLE_ADMIN})
-    public List<AssignedResource> getRes() {
-       return assignedResourceRepository.findAll();
-    }
 
     @GetMapping("/user/get")
     @Secured({ROLE_UTENTE})
@@ -216,6 +205,32 @@ public class AnalyticsController {
     public AnalyticsDTO getAllAnalytics() {
         try {
             Optional<AnalyticsDTO> analyticsDTO = calculateAnalyticsService.getOverallAnalytics();
+
+            if (analyticsDTO.isEmpty()) {
+                throw new MissingDataException(ERROR + "No data found");
+            }
+
+            return analyticsDTO.get();
+        } catch (Exception e) {
+            throw new MissingDataException(ERROR + e.getMessage());
+        }
+    }
+
+    @GetMapping("/get/filter")
+    @Secured({ROLE_ADMIN})
+    public AnalyticsDTO getAllAnalyticsByDate(@RequestParam String startDate, @RequestParam String endDate) {
+        LocalDateTime start;
+        LocalDateTime end;
+
+        try {
+            start = LocalDateTime.parse(startDate);
+            end = LocalDateTime.parse(endDate);
+        } catch (Exception e) {
+            throw new BadFormatRequestException("Wrong date format. Please use yyyy-MM-ddTHH:mm:ss format");
+        }
+
+        try {
+            Optional<AnalyticsDTO> analyticsDTO = calculateAnalyticsService.getOverallAnalytics(start, end);
 
             if (analyticsDTO.isEmpty()) {
                 throw new MissingDataException(ERROR + "No data found");

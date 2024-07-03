@@ -39,7 +39,7 @@ public class AnalyticsQueryConstants {
 
     public static final String ACTIVE_MEMBER_COUNT_FIELD = "activeMemberCount";
     public static final String ACTIVE_USER_COUNT_FIELD = "activeUserCount";
-    public static final String WORK_HOURS_FIELD = "workHours";
+    public static final String WORK_TIME_FIELD = "workMinutes";
     public static final String TASK_SUBMITTED_COUNT_FIELD = "tasksSubmitted";
     public static final String TASK_COMPLETED_COUNT_FIELD = "tasksCompleted";
     public static final String UNIQUE_MEMBERS_FIELD = "uniqueMembers";
