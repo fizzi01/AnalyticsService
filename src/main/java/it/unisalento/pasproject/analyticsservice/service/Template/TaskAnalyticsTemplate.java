@@ -30,7 +30,10 @@ public class TaskAnalyticsTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
 
     @Override
     protected List<AggregationOperation> getAdditionalOperations() {
-        return List.of(Aggregation.lookup(this.mongoTemplate.getCollectionName(AssignedResource.class), RES_TASK_ID_FIELD, ASSIGNMENT_TASK_ID_FIELD, "assignedResources"));
+        return List.of(
+                Aggregation.lookup(this.mongoTemplate.getCollectionName(AssignedResource.class), RES_TASK_ID_FIELD, ASSIGNMENT_TASK_ID_FIELD, "assignedResources"),
+                Aggregation.unwind("assignedResources", true)
+        );
     }
 
     @Override
