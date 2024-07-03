@@ -35,7 +35,6 @@ public class AnalyticsController {
     private final UserCheckService userCheckService;
 
     private final AssignmentAnalyticsRepository assignmentAnalyticsRepository;
-    private final AssignedResourceRepository assignedResourceRepository;
 
     @Autowired
     public AnalyticsController(CalculateAnalyticsService calculateAnalyticsService,
@@ -46,7 +45,6 @@ public class AnalyticsController {
         this.calculateAnalyticsService = calculateAnalyticsService;
         this.userCheckService = userCheckService;
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
-        this.assignedResourceRepository = assignedResourceRepository;
     }
 
 
@@ -57,7 +55,7 @@ public class AnalyticsController {
 
         String emailUtente = userCheckService.getCurrentUserEmail();
         try {
-            Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente);
+            Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente,null,null);
 
             if (userAnalyticsDTO.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailUtente);
@@ -105,7 +103,14 @@ public class AnalyticsController {
 
     @GetMapping("/user/get/filter")
     @Secured({ROLE_UTENTE})
-    public UserAnalyticsDTO getUserAnalyticsByDate(@RequestParam(required = false) String taskId,@RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate) {
+    public UserAnalyticsDTO getUserAnalyticsByDate(@RequestParam(required = false) String taskId,
+                                                   @RequestParam(required = false) String startDate,
+                                                   @RequestParam(required = false) String endDate) {
+
+        if(taskId == null && startDate == null && endDate == null){
+            throw new MissingDataException("Please provide at least one parameter");
+        }
+
         String emailUtente = userCheckService.getCurrentUserEmail();
         LocalDateTime start = null;
         LocalDateTime end = null;
@@ -142,16 +147,14 @@ public class AnalyticsController {
 
     }
 
-
     @GetMapping("/member/get")
     @Secured({ROLE_MEMBRO})
     public MemberAnalyticsDTO getMemberAnalytics() {
 
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String emailMembro = userDetails.getUsername();
+        String emailMembro = userCheckService.getCurrentUserEmail();
 
         try {
-            Optional<MemberAnalyticsDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberAnalytics(emailMembro);
+            Optional<MemberAnalyticsDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberAnalytics(emailMembro, null, null);
 
             if (memberAnalyticsDTO.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
@@ -170,8 +173,7 @@ public class AnalyticsController {
     @GetMapping("/member/get/filter")
     @Secured({ROLE_MEMBRO})
     public MemberAnalyticsDTO getMemberAnalyticsByDate(@RequestParam String startDate, @RequestParam String endDate) {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String emailMembro = userDetails.getUsername();
+        String emailMembro = userCheckService.getCurrentUserEmail();
 
         LocalDateTime start;
         LocalDateTime end;
@@ -204,7 +206,7 @@ public class AnalyticsController {
     @Secured({ROLE_ADMIN})
     public AnalyticsDTO getAllAnalytics() {
         try {
-            Optional<AnalyticsDTO> analyticsDTO = calculateAnalyticsService.getOverallAnalytics();
+            Optional<AnalyticsDTO> analyticsDTO = calculateAnalyticsService.getOverallAnalytics(null, null);
 
             if (analyticsDTO.isEmpty()) {
                 throw new MissingDataException(ERROR + "No data found");
@@ -246,7 +248,7 @@ public class AnalyticsController {
     @Secured({ROLE_ADMIN})
     public UserAnalyticsDTO getUserAnalytics(@RequestParam String email) {
         try {
-            Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(email);
+            Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(email,null,null);
 
             if (userAnalyticsDTO.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + email);
