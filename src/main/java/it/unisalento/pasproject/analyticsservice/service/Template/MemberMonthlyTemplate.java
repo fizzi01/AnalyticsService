@@ -84,7 +84,6 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     @Override
     protected GroupOperation createGroupOperation() {
         GroupOperation groupOperation = Aggregation.group("month", "year")
-                .first(EMAIL_MEMBER_FIELD).as("memberEmail")
                 .sum(ArithmeticOperators.Divide.valueOf(
                         ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)
                 ).divideBy(60000)).as("totalWorkMinutes")
