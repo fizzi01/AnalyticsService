@@ -21,10 +21,10 @@ public abstract class AnalyticsTemplate<T> {
         List<AggregationOperation> operations = new ArrayList<>();
         operations.add(matchOperation);
         operations.addAll(getAdditionalOperations());
-        operations.add(createProjectionOperation());
-        operations.add(createGroupOperation());
-        operations.add(createFinalProjection());
-        operations.add(createSortOperation());
+        //operations.add(createProjectionOperation());
+        //operations.add(createGroupOperation());
+        //operations.add(createFinalProjection());
+        //operations.add(createSortOperation());
 
         Aggregation aggregation = Aggregation.newAggregation(operations);
         AggregationResults<T> results = mongoTemplate.aggregate(aggregation, getCollectionName(), getDTOClass());
