@@ -107,7 +107,7 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
                         EMAIL_MEMBER_FIELD,
                         "month",
                         "year",
-                        "totalWorkMinutes",
+                        TOTAL_WORK_DURATION_FIELD,
                         "totalEnergySold",
                         "totalComputingPowerSold",
                         TASKS_COMPLETED_FIELD,
