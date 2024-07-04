@@ -107,13 +107,12 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
                         EMAIL_MEMBER_FIELD,
                         "month",
                         "year",
-                        TOTAL_WORK_DURATION_FIELD,
+                        "totalWorkMinutes",
                         "totalEnergySold",
                         "totalComputingPowerSold",
                         TASKS_COMPLETED_FIELD,
                         TASKS_IN_PROGRESS_FIELD,
-                        TASKS_ASSIGNED_FIELD,
-                        TOTAL_WORK_DURATION_FIELD
+                        TASKS_ASSIGNED_FIELD
         );
 
         logger.info("FinalProjectionOperation: {}", finalProjection);
