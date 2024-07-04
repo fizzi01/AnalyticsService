@@ -170,6 +170,29 @@ public class AnalyticsController {
 
     }
 
+    //TODO: AGGIUNTA
+    @GetMapping("/member/get/energy")
+    @Secured({ROLE_MEMBRO})
+    public MemberAnalyticsListDTO getMemberEnergySold() {
+        String emailMembro = userCheckService.getCurrentUserEmail();
+
+        try {
+            Optional<MemberAnalyticsListDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberEnergySold(emailMembro, null, null);
+
+            if (memberAnalyticsDTO.isEmpty()) {
+                throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
+            }
+
+            return memberAnalyticsDTO.get();
+
+        } catch (MissingDataException e) {
+            throw new MissingDataException(e.getMessage());
+        } catch (Exception e) {
+            throw new MissingDataException(ERROR + e.getMessage());
+        }
+
+    }
+
     @GetMapping("/member/get/filter")
     @Secured({ROLE_MEMBRO})
     public MemberAnalyticsDTO getMemberAnalyticsByDate(@RequestParam String startDate, @RequestParam String endDate) {
