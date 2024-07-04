@@ -20,7 +20,7 @@ public abstract class AnalyticsTemplate<T> {
         MatchOperation matchOperation = createMatchOperation(null, startDate, endDate);
         List<AggregationOperation> operations = new ArrayList<>();
         operations.add(matchOperation);
-        operations.addAll(getAdditionalOperations());
+        //operations.addAll(getAdditionalOperations());
         //operations.add(createProjectionOperation());
         //operations.add(createGroupOperation());
         //operations.add(createFinalProjection());
