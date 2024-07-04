@@ -85,6 +85,11 @@ public class MemberAnalyticsTemplate extends AnalyticsTemplate<MemberAnalyticsDT
     }
 
     @Override
+    protected SortOperation createSortOperation() {
+        return null;
+    }
+
+    @Override
     protected String getCollectionName() {
         return this.mongoTemplate.getCollectionName(AssignedResource.class);
     }

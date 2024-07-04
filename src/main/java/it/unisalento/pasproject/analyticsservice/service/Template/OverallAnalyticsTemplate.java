@@ -75,6 +75,11 @@ public class OverallAnalyticsTemplate extends AnalyticsTemplate<AnalyticsDTO>{
     }
 
     @Override
+    protected SortOperation createSortOperation() {
+        return null;
+    }
+
+    @Override
     protected String getCollectionName() {
         return "assigned_resource_analytics";
     }

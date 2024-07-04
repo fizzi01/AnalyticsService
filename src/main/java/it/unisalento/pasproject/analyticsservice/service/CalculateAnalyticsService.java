@@ -50,8 +50,8 @@ public class CalculateAnalyticsService {
     }
 
     //TODO: AGGIUNTA
-    public Optional<MemberMonthlyAnalyticsListDTO> getMemberEnergySold(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
-        return memberMonthlyTemplate.getAnalytics(memberEmail, startDate, endDate);
+    public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
+        return memberMonthlyTemplate.getAnalyticsList(memberEmail, startDate, endDate);
     }
 
     // #### User Analytics ####

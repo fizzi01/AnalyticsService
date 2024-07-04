@@ -16,6 +16,22 @@ public abstract class AnalyticsTemplate<T> {
         this.mongoTemplate = mongoTemplate;
     }
 
+    public List<T> getAnalyticsList(String id, LocalDateTime startDate, LocalDateTime endDate) {
+        MatchOperation matchOperation = createMatchOperation(null, startDate, endDate);
+        List<AggregationOperation> operations = new ArrayList<>();
+        operations.add(matchOperation);
+        operations.addAll(getAdditionalOperations());
+        operations.add(createProjectionOperation());
+        operations.add(createGroupOperation());
+        operations.add(createFinalProjection());
+        operations.add(createSortOperation());
+
+        Aggregation aggregation = Aggregation.newAggregation(operations);
+        AggregationResults<T> results = mongoTemplate.aggregate(aggregation, getCollectionName(), getDTOClass());
+
+        return results.getMappedResults();
+    }
+
     public Optional<T> getAnalytics(String id, LocalDateTime startDate, LocalDateTime endDate) {
         MatchOperation matchOperation = createMatchOperation(id, startDate, endDate);
         List<AggregationOperation> operations = new ArrayList<>();
@@ -40,6 +56,8 @@ public abstract class AnalyticsTemplate<T> {
     protected abstract GroupOperation createGroupOperation();
 
     protected abstract ProjectionOperation createFinalProjection();
+
+    protected abstract SortOperation createSortOperation();
 
     protected abstract String getCollectionName();
 

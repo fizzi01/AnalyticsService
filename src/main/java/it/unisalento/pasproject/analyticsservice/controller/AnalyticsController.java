@@ -1,6 +1,5 @@
 package it.unisalento.pasproject.analyticsservice.controller;
 
-import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import it.unisalento.pasproject.analyticsservice.dto.*;
 import it.unisalento.pasproject.analyticsservice.exceptions.BadFormatRequestException;
@@ -12,8 +11,6 @@ import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsServi
 import it.unisalento.pasproject.analyticsservice.service.UserCheckService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -173,17 +170,17 @@ public class AnalyticsController {
     //TODO: AGGIUNTA
     @GetMapping("/member/get/energy")
     @Secured({ROLE_MEMBRO})
-    public MemberMonthlyAnalyticsListDTO getMemberEnergySold() {
+    public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics() {
         String emailMembro = userCheckService.getCurrentUserEmail();
 
         try {
-            Optional<MemberMonthlyAnalyticsListDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberEnergySold(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
+            List<MemberMonthlyAnalyticsDTO> memberMonthlyAnalytics = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
 
-            if (memberAnalyticsDTO.isEmpty()) {
+            if (memberMonthlyAnalytics.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
             }
 
-            return memberAnalyticsDTO.get();
+            return memberMonthlyAnalytics;
 
         } catch (MissingDataException e) {
             throw new MissingDataException(e.getMessage());

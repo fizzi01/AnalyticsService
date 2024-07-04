@@ -1,22 +1,22 @@
 package it.unisalento.pasproject.analyticsservice.service.Template;
 
 import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
-import it.unisalento.pasproject.analyticsservice.dto.MemberMonthlyAnalyticsListDTO;
+import it.unisalento.pasproject.analyticsservice.dto.MemberMonthlyAnalyticsDTO;
 import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.*;
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.ASSIGNED_TIME_FIELD;
 
-public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyticsListDTO> {
+public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyticsDTO> {
     //LOgger factory
     private static final Logger logger = LoggerFactory.getLogger(CalculateAnalyticsService.class);
 
@@ -25,9 +25,9 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     }
 
     @Override
-    public Optional<MemberMonthlyAnalyticsListDTO> getAnalytics(String id, LocalDateTime startDate, LocalDateTime endDate) {
+    public List<MemberMonthlyAnalyticsDTO> getAnalyticsList(String id, LocalDateTime startDate, LocalDateTime endDate) {
         logger.info("Executing getAnalytics with id: {}, startDate: {}, endDate: {}", id, startDate, endDate);
-        Optional<MemberMonthlyAnalyticsListDTO> result = super.getAnalytics(id, startDate, endDate);
+        List<MemberMonthlyAnalyticsDTO> result = super.getAnalyticsList(id, startDate, endDate);
         logger.info("Result of getAnalytics: {}", result);
         return result;
     }
@@ -84,7 +84,7 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     @Override
     protected GroupOperation createGroupOperation() {
         GroupOperation groupOperation = Aggregation.group("month", "year")
-                .push(EMAIL_MEMBER_FIELD).as("memberEmail")
+                .first(EMAIL_MEMBER_FIELD).as("memberEmail")
                 .sum(ArithmeticOperators.Divide.valueOf(
                         ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)
                 ).divideBy(60000)).as("totalWorkMinutes")
@@ -120,12 +120,17 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     }
 
     @Override
+    protected SortOperation createSortOperation() {
+        return Aggregation.sort(Sort.by(Sort.Order.asc("year"), Sort.Order.asc("month")));
+    }
+
+    @Override
     protected String getCollectionName() {
         return this.mongoTemplate.getCollectionName(AssignedResource.class);
     }
 
     @Override
-    protected Class<MemberMonthlyAnalyticsListDTO> getDTOClass() {
-        return MemberMonthlyAnalyticsListDTO.class;
+    protected Class<MemberMonthlyAnalyticsDTO> getDTOClass() {
+        return MemberMonthlyAnalyticsDTO.class;
     }
 }

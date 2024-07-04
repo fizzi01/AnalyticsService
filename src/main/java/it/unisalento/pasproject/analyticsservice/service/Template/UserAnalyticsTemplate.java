@@ -81,6 +81,11 @@ public class UserAnalyticsTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
     }
 
     @Override
+    protected SortOperation createSortOperation() {
+        return null;
+    }
+
+    @Override
     protected String getCollectionName() {
         return "assignment_analytics";
     }
