@@ -177,7 +177,7 @@ public class AnalyticsController {
         String emailMembro = userCheckService.getCurrentUserEmail();
 
         try {
-            Optional<MemberAnalyticsListDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberEnergySold(emailMembro, null, null);
+            Optional<MemberAnalyticsListDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberEnergySold(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
 
             if (memberAnalyticsDTO.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
