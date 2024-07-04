@@ -173,11 +173,11 @@ public class AnalyticsController {
     //TODO: AGGIUNTA
     @GetMapping("/member/get/energy")
     @Secured({ROLE_MEMBRO})
-    public MemberAnalyticsListDTO getMemberEnergySold() {
+    public MemberMonthlyAnalyticsListDTO getMemberEnergySold() {
         String emailMembro = userCheckService.getCurrentUserEmail();
 
         try {
-            Optional<MemberAnalyticsListDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberEnergySold(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
+            Optional<MemberMonthlyAnalyticsListDTO> memberAnalyticsDTO = calculateAnalyticsService.getMemberEnergySold(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
 
             if (memberAnalyticsDTO.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);

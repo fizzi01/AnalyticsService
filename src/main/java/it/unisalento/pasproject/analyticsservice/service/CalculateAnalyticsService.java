@@ -1,10 +1,7 @@
 package it.unisalento.pasproject.analyticsservice.service;
 
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
-import it.unisalento.pasproject.analyticsservice.dto.AnalyticsDTO;
-import it.unisalento.pasproject.analyticsservice.dto.MemberAnalyticsDTO;
-import it.unisalento.pasproject.analyticsservice.dto.MemberAnalyticsListDTO;
-import it.unisalento.pasproject.analyticsservice.dto.UserAnalyticsDTO;
+import it.unisalento.pasproject.analyticsservice.dto.*;
 import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
 import it.unisalento.pasproject.analyticsservice.service.Template.*;
 import org.slf4j.Logger;
@@ -28,7 +25,7 @@ public class CalculateAnalyticsService {
     private final UserAnalyticsTemplate userAnalyticsTemplate;
     private final MemberAnalyticsTemplate memberAnalyticsTemplate;
     //TODO: AGGIUNTA
-    private final MemberEnergySoldTemplate memberEnergySoldTemplate;
+    private final MemberMonthlyTemplate memberMonthlyTemplate;
 
     //LOgger factory
     private static final Logger LOGGER = LoggerFactory.getLogger(CalculateAnalyticsService.class);
@@ -44,7 +41,7 @@ public class CalculateAnalyticsService {
         this.userAnalyticsTemplate = new UserAnalyticsTemplate(mongoTemplate);
         this.memberAnalyticsTemplate = new MemberAnalyticsTemplate(mongoTemplate);
         //TODO: AGGIUNTA
-        this.memberEnergySoldTemplate = new MemberEnergySoldTemplate(mongoTemplate);
+        this.memberMonthlyTemplate = new MemberMonthlyTemplate(mongoTemplate);
     }
 
     // #### Member Analytics ####
@@ -53,8 +50,8 @@ public class CalculateAnalyticsService {
     }
 
     //TODO: AGGIUNTA
-    public Optional<MemberAnalyticsListDTO> getMemberEnergySold(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
-        return memberEnergySoldTemplate.getAnalytics(memberEmail, startDate, endDate);
+    public Optional<MemberMonthlyAnalyticsListDTO> getMemberEnergySold(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
+        return memberMonthlyTemplate.getAnalytics(memberEmail, startDate, endDate);
     }
 
     // #### User Analytics ####
