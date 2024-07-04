@@ -1,5 +1,6 @@
 package it.unisalento.pasproject.analyticsservice.controller;
 
+import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import it.unisalento.pasproject.analyticsservice.dto.*;
 import it.unisalento.pasproject.analyticsservice.exceptions.BadFormatRequestException;
@@ -32,6 +33,7 @@ public class AnalyticsController {
     private final UserCheckService userCheckService;
 
     private final AssignmentAnalyticsRepository assignmentAnalyticsRepository;
+    private final AssignedResourceRepository assignedResourceRepository;
 
     @Autowired
     public AnalyticsController(CalculateAnalyticsService calculateAnalyticsService,
@@ -42,6 +44,7 @@ public class AnalyticsController {
         this.calculateAnalyticsService = calculateAnalyticsService;
         this.userCheckService = userCheckService;
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
+        this.assignedResourceRepository = assignedResourceRepository;
     }
 
 
@@ -170,17 +173,18 @@ public class AnalyticsController {
     //TODO: AGGIUNTA
     @GetMapping("/member/get/energy")
     @Secured({ROLE_MEMBRO})
-    public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics() {
+    public List<AssignedResource> getMemberMonthlyAnalytics() {
         String emailMembro = userCheckService.getCurrentUserEmail();
 
         try {
-            List<MemberMonthlyAnalyticsDTO> memberMonthlyAnalytics = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
+            //List<MemberMonthlyAnalyticsDTO> memberMonthlyAnalytics = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
+            List<AssignedResource> assignedResources = assignedResourceRepository.findByMemberEmailAndAssignedTimeGreaterThanEqualAndCompletedTimeLessThanEqual(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
 
-            if (memberMonthlyAnalytics.isEmpty()) {
+            if (assignedResources.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
             }
 
-            return memberMonthlyAnalytics;
+            return assignedResources;
 
         } catch (MissingDataException e) {
             throw new MissingDataException(e.getMessage());
