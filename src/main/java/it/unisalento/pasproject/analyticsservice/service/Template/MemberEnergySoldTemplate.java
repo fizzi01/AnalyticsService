@@ -2,6 +2,9 @@ package it.unisalento.pasproject.analyticsservice.service.Template;
 
 import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.dto.MemberAnalyticsListDTO;
+import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -14,13 +17,19 @@ import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryCo
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.ASSIGNED_TIME_FIELD;
 
 public class MemberEnergySoldTemplate extends AnalyticsTemplate<MemberAnalyticsListDTO> {
+    //LOgger factory
+    private static final Logger logger= LoggerFactory.getLogger(CalculateAnalyticsService.class);
+
     public MemberEnergySoldTemplate(MongoTemplate mongoTemplate) {
         super(mongoTemplate);
     }
 
     @Override
     public Optional<MemberAnalyticsListDTO> getAnalytics(String id, LocalDateTime startDate, LocalDateTime endDate) {
-        return super.getAnalytics(id, startDate, endDate);
+        logger.info("Executing getAnalytics with id: {}, startDate: {}, endDate: {}", id, startDate, endDate);
+        Optional<MemberAnalyticsListDTO> result = super.getAnalytics(id, startDate, endDate);
+        logger.info("Result of getAnalytics: {}", result);
+        return result;
     }
 
     @Override
@@ -40,6 +49,7 @@ public class MemberEnergySoldTemplate extends AnalyticsTemplate<MemberAnalyticsL
             matchOperation = Aggregation.match(Criteria.where("memberEmail").is(id));
         }
 
+        logger.info("MatchOperation: {}", matchOperation);
         return matchOperation;
     }
 
@@ -50,7 +60,7 @@ public class MemberEnergySoldTemplate extends AnalyticsTemplate<MemberAnalyticsL
 
     @Override
     protected ProjectionOperation createProjectionOperation() {
-        return Aggregation.project()
+        ProjectionOperation projectionOperation = Aggregation.project()
                 .andInclude(EMAIL_MEMBER_FIELD, ASSIGNED_TIME_FIELD, COMPLETED_TIME_FIELD)
                 .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(true))
                         .thenValueOf(ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)).otherwise(0)).as(WORK_DURATION_FIELD)
@@ -63,11 +73,14 @@ public class MemberEnergySoldTemplate extends AnalyticsTemplate<MemberAnalyticsL
                 .as(TOTAL_COMPUTING_POWER_FIELD)
                 .andExpression("year(" + COMPLETED_TIME_FIELD + ")").as("completedYear")
                 .andExpression("month(" + COMPLETED_TIME_FIELD + ")").as("completedMonth");
+
+        logger.info("ProjectionOperation: {}", projectionOperation);
+        return projectionOperation;
     }
 
     @Override
     protected GroupOperation createGroupOperation() {
-        return Aggregation.group("completedMonth", "completedYear")
+        GroupOperation groupOperation = Aggregation.group("completedMonth", "completedYear")
                 .first(EMAIL_MEMBER_FIELD).as(EMAIL_MEMBER_FIELD)
                 .sum(WORK_DURATION_FIELD).as(TOTAL_WORK_DURATION_FIELD)
                 .sum(ASSIGNED_ENERGY_CONSUMPTION_PER_HOUR_FIELD).as("energySold")
@@ -77,11 +90,14 @@ public class MemberEnergySoldTemplate extends AnalyticsTemplate<MemberAnalyticsL
                 .count().as(TASKS_ASSIGNED_FIELD)
                 .min(ASSIGNED_TIME_FIELD).as(START_DATE_FIELD)
                 .max(ASSIGNED_TIME_FIELD).as(END_DATE_FIELD);
+
+        logger.info("GroupOperation: {}", groupOperation);
+        return groupOperation;
     }
 
     @Override
     protected ProjectionOperation createFinalProjection() {
-        return Aggregation.project(EMAIL_MEMBER_FIELD,
+        ProjectionOperation finalProjection = Aggregation.project(EMAIL_MEMBER_FIELD,
                         TOTAL_WORK_DURATION_FIELD,
                         "energySold",
                         "computingPowerSold",
@@ -91,6 +107,9 @@ public class MemberEnergySoldTemplate extends AnalyticsTemplate<MemberAnalyticsL
                         START_DATE_FIELD,
                         END_DATE_FIELD)
                 .andExpression(TOTAL_WORK_DURATION_FIELD + " / 60000").as(WORK_TIME_FIELD); // Convert milliseconds to minutes
+
+        logger.info("FinalProjectionOperation: {}", finalProjection);
+        return finalProjection;
     }
 
     @Override
