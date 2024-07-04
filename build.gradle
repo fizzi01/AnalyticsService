@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'it.unisalento.pasproject'
-version = 'v0.1.1'
+version = 'v0.1.2'
 
 java {
     sourceCompatibility = '21'
