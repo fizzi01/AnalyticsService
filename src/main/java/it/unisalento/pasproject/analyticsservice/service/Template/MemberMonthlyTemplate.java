@@ -84,18 +84,18 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     @Override
     protected GroupOperation createGroupOperation() {
         GroupOperation groupOperation = Aggregation.group("month", "year")
-                .first(EMAIL_MEMBER_FIELD).as(EMAIL_MEMBER_FIELD)
+                .first(EMAIL_MEMBER_FIELD).as("memberEmail")
                 .sum(ArithmeticOperators.Divide.valueOf(
                         ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)
-                ).divideBy(60000)).as(TOTAL_WORK_DURATION_FIELD)
+                ).divideBy(60000)).as("totalWorkMinutes")
                 .sum(ArithmeticOperators.Multiply.valueOf(ASSIGNED_ENERGY_CONSUMPTION_PER_HOUR_FIELD)
                         .multiplyBy(ArithmeticOperators.Divide.valueOf(
                                 ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)
                         ).divideBy(3600000))).as("totalEnergySold")
                 .sum(TOTAL_COMPUTING_POWER_FIELD).as("totalComputingPowerSold")
-                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(true)).then(1).otherwise(0)).as(TASKS_COMPLETED_FIELD)
-                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(false)).then(1).otherwise(0)).as(TASKS_IN_PROGRESS_FIELD)
-                .count().as(TASKS_ASSIGNED_FIELD);
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
+                .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(false)).then(1).otherwise(0)).as("tasksInProgress")
+                .count().as("tasksAssigned");
 
         logger.info("GroupOperation: {}", groupOperation);
         return groupOperation;
@@ -104,15 +104,15 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     @Override
     protected ProjectionOperation createFinalProjection() {
         ProjectionOperation finalProjection = Aggregation.project(
-                        EMAIL_MEMBER_FIELD,
-                        "month",
-                        "year",
-                        TOTAL_WORK_DURATION_FIELD,
-                        "totalEnergySold",
-                        "totalComputingPowerSold",
-                        TASKS_COMPLETED_FIELD,
-                        TASKS_IN_PROGRESS_FIELD,
-                        TASKS_ASSIGNED_FIELD
+                "memberEmail",
+                "month",
+                "year",
+                "totalWorkMinutes",
+                "totalEnergySold",
+                "totalComputingPowerSold",
+                "tasksCompleted",
+                "tasksInProgress",
+                "tasksAssigned"
         );
 
         logger.info("FinalProjectionOperation: {}", finalProjection);
