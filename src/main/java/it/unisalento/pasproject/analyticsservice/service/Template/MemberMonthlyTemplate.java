@@ -73,7 +73,7 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
                         .add(ASSIGNED_OPENCL_SCORE_FIELD)
                         .add(ASSIGNED_VULKAN_SCORE_FIELD)
                         .add(ASSIGNED_CUDA_SCORE_FIELD))
-                .as(TOTAL_COMPUTING_POWER_FIELD)
+                .as("totalComputingPowerSold")
                 .and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%m")).as("month")
                 .and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%Y")).as("year");
 
@@ -84,7 +84,7 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     @Override
     protected GroupOperation createGroupOperation() {
         GroupOperation groupOperation = Aggregation.group("month", "year")
-                .first(EMAIL_MEMBER_FIELD).as("memberEmail")
+                .push(EMAIL_MEMBER_FIELD).as("memberEmail")
                 .sum(ArithmeticOperators.Divide.valueOf(
                         ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)
                 ).divideBy(60000)).as("totalWorkMinutes")
