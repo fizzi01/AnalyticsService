@@ -2,7 +2,6 @@ package it.unisalento.pasproject.analyticsservice.service.Template;
 
 import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.dto.MemberMonthlyAnalyticsDTO;
-import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
@@ -18,7 +17,7 @@ import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryCo
 
 public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyticsDTO> {
     //LOgger factory
-    private static final Logger logger = LoggerFactory.getLogger(CalculateAnalyticsService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MemberMonthlyTemplate.class);
 
     public MemberMonthlyTemplate(MongoTemplate mongoTemplate) {
         super(mongoTemplate);
@@ -35,6 +34,8 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     @Override
     protected MatchOperation createMatchOperation(String id, LocalDateTime startDate, LocalDateTime endDate) {
         MatchOperation matchOperation;
+
+        logger.error("Creating match operation with id: {}, startDate: {}, endDate: {}", id, startDate, endDate);
 
         if (startDate != null && endDate != null) {
             matchOperation = Aggregation.match(Criteria.where("memberEmail").is(id)
@@ -73,9 +74,9 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
                         .add(ASSIGNED_OPENCL_SCORE_FIELD)
                         .add(ASSIGNED_VULKAN_SCORE_FIELD)
                         .add(ASSIGNED_CUDA_SCORE_FIELD))
-                .as("totalComputingPowerSold");
-                //.and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%m")).as("month")
-                //.and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%Y")).as("year");
+                .as("totalComputingPowerSold")
+                .and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%m")).as("month")
+                .and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%Y")).as("year");
 
         logger.info("ProjectionOperation: {}", projectionOperation);
         return projectionOperation;
@@ -91,7 +92,7 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
                         .multiplyBy(ArithmeticOperators.Divide.valueOf(
                                 ArithmeticOperators.Subtract.valueOf(COMPLETED_TIME_FIELD).subtract(ASSIGNED_TIME_FIELD)
                         ).divideBy(3600000))).as("totalEnergySold")
-                .sum(TOTAL_COMPUTING_POWER_FIELD).as("totalComputingPowerSold")
+                .sum("totalComputingPowerSold").as("totalComputingPowerSold")
                 .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
                 .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf(HAS_COMPLETED_FIELD).equalToValue(false)).then(1).otherwise(0)).as("tasksInProgress")
                 .count().as("tasksAssigned");

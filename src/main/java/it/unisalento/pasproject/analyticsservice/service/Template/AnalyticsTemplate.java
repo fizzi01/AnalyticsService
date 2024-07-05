@@ -1,5 +1,8 @@
 package it.unisalento.pasproject.analyticsservice.service.Template;
 
+import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 
@@ -12,21 +15,26 @@ public abstract class AnalyticsTemplate<T> {
 
     protected final MongoTemplate mongoTemplate;
 
+    private static final Logger logger = LoggerFactory.getLogger(AnalyticsTemplate.class);
+
     protected AnalyticsTemplate(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
 
     public List<T> getAnalyticsList(String id, LocalDateTime startDate, LocalDateTime endDate) {
-        MatchOperation matchOperation = createMatchOperation(null, startDate, endDate);
+        MatchOperation matchOperation = createMatchOperation(id, startDate, endDate);
         List<AggregationOperation> operations = new ArrayList<>();
         operations.add(matchOperation);
         operations.addAll(getAdditionalOperations());
         operations.add(createProjectionOperation());
-        //operations.add(createGroupOperation());
-        //operations.add(createFinalProjection());
-        //operations.add(createSortOperation());
+        operations.add(createGroupOperation());
+        operations.add(createFinalProjection());
+        operations.add(createSortOperation());
+
+
 
         Aggregation aggregation = Aggregation.newAggregation(operations);
+        logger.error("Aggregation: {}", aggregation);
         AggregationResults<T> results = mongoTemplate.aggregate(aggregation, getCollectionName(), getDTOClass());
 
         return results.getMappedResults();
