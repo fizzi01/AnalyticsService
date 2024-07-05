@@ -73,9 +73,9 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
                         .add(ASSIGNED_OPENCL_SCORE_FIELD)
                         .add(ASSIGNED_VULKAN_SCORE_FIELD)
                         .add(ASSIGNED_CUDA_SCORE_FIELD))
-                .as("totalComputingPowerSold")
-                .and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%m")).as("month")
-                .and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%Y")).as("year");
+                .as("totalComputingPowerSold");
+                //.and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%m")).as("month")
+                //.and(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%Y")).as("year");
 
         logger.info("ProjectionOperation: {}", projectionOperation);
         return projectionOperation;
