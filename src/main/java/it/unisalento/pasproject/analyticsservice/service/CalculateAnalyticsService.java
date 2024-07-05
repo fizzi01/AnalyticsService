@@ -51,7 +51,7 @@ public class CalculateAnalyticsService {
     }
 
     //TODO: AGGIUNTA
-    public List<AssignedResource> getMemberMonthlyAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
+    public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
         return memberMonthlyTemplate.getAnalyticsList(memberEmail, startDate, endDate);
     }
 

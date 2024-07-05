@@ -16,7 +16,7 @@ import java.util.List;
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.*;
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.ASSIGNED_TIME_FIELD;
 
-public class MemberMonthlyTemplate extends AnalyticsTemplate<AssignedResource> {
+public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyticsDTO> {
     //LOgger factory
     private static final Logger logger = LoggerFactory.getLogger(CalculateAnalyticsService.class);
 
@@ -25,9 +25,9 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<AssignedResource> {
     }
 
     @Override
-    public List<AssignedResource> getAnalyticsList(String id, LocalDateTime startDate, LocalDateTime endDate) {
+    public List<MemberMonthlyAnalyticsDTO> getAnalyticsList(String id, LocalDateTime startDate, LocalDateTime endDate) {
         logger.info("Executing getAnalytics with id: {}, startDate: {}, endDate: {}", id, startDate, endDate);
-        List<AssignedResource> result = super.getAnalyticsList(id, startDate, endDate);
+        List<MemberMonthlyAnalyticsDTO> result = super.getAnalyticsList(id, startDate, endDate);
         logger.info("Result of getAnalytics: {}", result);
         return result;
     }
@@ -102,17 +102,16 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<AssignedResource> {
 
     @Override
     protected ProjectionOperation createFinalProjection() {
-        ProjectionOperation finalProjection = Aggregation.project(
-                "memberEmail",
-                "month",
-                "year",
-                "totalWorkMinutes",
-                "totalEnergySold",
-                "totalComputingPowerSold",
-                "tasksCompleted",
-                "tasksInProgress",
-                "tasksAssigned"
-        );
+        ProjectionOperation finalProjection = Aggregation.project()
+                .andExpression("memberEmail").as("memberEmail")
+                .andExpression("toInt(month)").as("month")
+                .andExpression("toInt(year)").as("year")
+                .andExpression("totalWorkMinutes").as("totalWorkMinutes")
+                .andExpression("totalEnergySold").as("totalEnergySold")
+                .andExpression("totalComputingPowerSold").as("totalComputingPowerSold")
+                .andExpression("tasksCompleted").as("tasksCompleted")
+                .andExpression("tasksInProgress").as("tasksInProgress")
+                .andExpression("tasksAssigned").as("tasksAssigned");
 
         logger.info("FinalProjectionOperation: {}", finalProjection);
         return finalProjection;
@@ -129,7 +128,7 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<AssignedResource> {
     }
 
     @Override
-    protected Class<AssignedResource> getDTOClass() {
-        return AssignedResource.class;
+    protected Class<MemberMonthlyAnalyticsDTO> getDTOClass() {
+        return MemberMonthlyAnalyticsDTO.class;
     }
 }

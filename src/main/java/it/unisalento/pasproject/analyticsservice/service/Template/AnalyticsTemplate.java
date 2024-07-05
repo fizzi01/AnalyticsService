@@ -20,11 +20,11 @@ public abstract class AnalyticsTemplate<T> {
         MatchOperation matchOperation = createMatchOperation(null, startDate, endDate);
         List<AggregationOperation> operations = new ArrayList<>();
         operations.add(matchOperation);
-        //operations.addAll(getAdditionalOperations());
-        //operations.add(createProjectionOperation());
-        //operations.add(createGroupOperation());
-        //operations.add(createFinalProjection());
-        //operations.add(createSortOperation());
+        operations.addAll(getAdditionalOperations());
+        operations.add(createProjectionOperation());
+        operations.add(createGroupOperation());
+        operations.add(createFinalProjection());
+        operations.add(createSortOperation());
 
         Aggregation aggregation = Aggregation.newAggregation(operations);
         AggregationResults<T> results = mongoTemplate.aggregate(aggregation, getCollectionName(), getDTOClass());

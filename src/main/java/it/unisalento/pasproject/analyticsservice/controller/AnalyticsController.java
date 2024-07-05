@@ -173,19 +173,19 @@ public class AnalyticsController {
     //TODO: AGGIUNTA
     @GetMapping("/member/get/energy")
     @Secured({ROLE_MEMBRO})
-    public List<AssignedResource> getMemberMonthlyAnalytics() {
+    public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics() {
         String emailMembro = userCheckService.getCurrentUserEmail();
 
         try {
-            //List<MemberMonthlyAnalyticsDTO> memberMonthlyAnalytics = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
+            List<MemberMonthlyAnalyticsDTO> memberMonthlyAnalytics = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
             //List<AssignedResource> assignedResources = assignedResourceRepository.findByMemberEmailAndAssignedTimeGreaterThanEqualAndCompletedTimeLessThanEqual(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
-            List<AssignedResource> assignedResources = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
+            //List<AssignedResource> assignedResources = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
 
-            if (assignedResources.isEmpty()) {
+            /*if (assignedResources.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
-            }
+            }*/
 
-            return assignedResources;
+            return memberMonthlyAnalytics;
 
         } catch (MissingDataException e) {
             throw new MissingDataException(e.getMessage());
