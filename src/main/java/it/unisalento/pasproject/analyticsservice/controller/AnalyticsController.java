@@ -178,7 +178,8 @@ public class AnalyticsController {
 
         try {
             //List<MemberMonthlyAnalyticsDTO> memberMonthlyAnalytics = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
-            List<AssignedResource> assignedResources = assignedResourceRepository.findByMemberEmailAndAssignedTimeGreaterThanEqualAndCompletedTimeLessThanEqual(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
+            //List<AssignedResource> assignedResources = assignedResourceRepository.findByMemberEmailAndAssignedTimeGreaterThanEqualAndCompletedTimeLessThanEqual(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
+            List<AssignedResource> assignedResources = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
 
             if (assignedResources.isEmpty()) {
                 throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);

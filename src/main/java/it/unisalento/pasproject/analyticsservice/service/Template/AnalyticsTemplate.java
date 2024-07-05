@@ -29,7 +29,7 @@ public abstract class AnalyticsTemplate<T> {
         Aggregation aggregation = Aggregation.newAggregation(operations);
         AggregationResults<T> results = mongoTemplate.aggregate(aggregation, getCollectionName(), getDTOClass());
 
-        return results.getMappedResults().stream().toList();
+        return results.getMappedResults();
     }
 
     public Optional<T> getAnalytics(String id, LocalDateTime startDate, LocalDateTime endDate) {

@@ -1,5 +1,6 @@
 package it.unisalento.pasproject.analyticsservice.service;
 
+import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import it.unisalento.pasproject.analyticsservice.dto.*;
 import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
@@ -50,7 +51,7 @@ public class CalculateAnalyticsService {
     }
 
     //TODO: AGGIUNTA
-    public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
+    public List<AssignedResource> getMemberMonthlyAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
         return memberMonthlyTemplate.getAnalyticsList(memberEmail, startDate, endDate);
     }
 

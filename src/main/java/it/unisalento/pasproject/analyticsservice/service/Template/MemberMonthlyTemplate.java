@@ -16,7 +16,7 @@ import java.util.List;
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.*;
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.ASSIGNED_TIME_FIELD;
 
-public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyticsDTO> {
+public class MemberMonthlyTemplate extends AnalyticsTemplate<AssignedResource> {
     //LOgger factory
     private static final Logger logger = LoggerFactory.getLogger(CalculateAnalyticsService.class);
 
@@ -25,9 +25,9 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     }
 
     @Override
-    public List<MemberMonthlyAnalyticsDTO> getAnalyticsList(String id, LocalDateTime startDate, LocalDateTime endDate) {
+    public List<AssignedResource> getAnalyticsList(String id, LocalDateTime startDate, LocalDateTime endDate) {
         logger.info("Executing getAnalytics with id: {}, startDate: {}, endDate: {}", id, startDate, endDate);
-        List<MemberMonthlyAnalyticsDTO> result = super.getAnalyticsList(id, startDate, endDate);
+        List<AssignedResource> result = super.getAnalyticsList(id, startDate, endDate);
         logger.info("Result of getAnalytics: {}", result);
         return result;
     }
@@ -129,7 +129,7 @@ public class MemberMonthlyTemplate extends AnalyticsTemplate<MemberMonthlyAnalyt
     }
 
     @Override
-    protected Class<MemberMonthlyAnalyticsDTO> getDTOClass() {
-        return MemberMonthlyAnalyticsDTO.class;
+    protected Class<AssignedResource> getDTOClass() {
+        return AssignedResource.class;
     }
 }
