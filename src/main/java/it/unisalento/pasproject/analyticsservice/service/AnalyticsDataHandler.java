@@ -32,17 +32,21 @@ public class AnalyticsDataHandler {
 
     @RabbitListener(queues = "${rabbitmq.queue.analytics.name}")
     public void receiveUpdatedAssignmentData(AnalyticsMessageDTO message) {
-        LOGGER.info("Received message: {}", message);
-        if (message != null){
-            if(message.getAssignedResource()!= null){
-                AssignedResource assignedResource = getFromDto(message.getAssignedResource());
-                assignedResourceRepository.save(assignedResource);
-            }
+        try {
+            LOGGER.debug("Received message: {}", message);
+            if (message != null) {
+                if (message.getAssignedResource() != null) {
+                    AssignedResource assignedResource = getFromDto(message.getAssignedResource());
+                    assignedResourceRepository.save(assignedResource);
+                }
 
-            if(message.getAssignment() != null){
-                AssignmentAnalytics assignmentAnalytics = getFromDto(message.getAssignment());
-                assignmentAnalyticsRepository.save(assignmentAnalytics);
+                if (message.getAssignment() != null) {
+                    AssignmentAnalytics assignmentAnalytics = getFromDto(message.getAssignment());
+                    assignmentAnalyticsRepository.save(assignmentAnalytics);
+                }
             }
+        }catch (Exception e){
+            LOGGER.error("Error: {}", e.getMessage());
         }
     }
 

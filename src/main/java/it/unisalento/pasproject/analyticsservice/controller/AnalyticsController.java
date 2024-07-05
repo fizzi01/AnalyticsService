@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -264,6 +266,33 @@ public class AnalyticsController {
             }
 
             return analyticsDTO.get();
+        } catch (Exception e) {
+            throw new MissingDataException(ERROR + e.getMessage());
+        }
+    }
+
+    @GetMapping("/get/daily")
+    @Secured({ROLE_ADMIN})
+    public List<DailyAnalyticsDTO> getDailyAnalytics(@RequestParam int month, @RequestParam int year) {
+        try {
+
+            if(month < 1 || month > 12 || year < 0){
+                throw new BadFormatRequestException("Wrong request format. Please provide a valid month and year");
+            }
+
+            LocalDate currentDate = LocalDate.of(year, month, 1);
+
+            LocalDate startDate = currentDate.with(TemporalAdjusters.firstDayOfMonth());
+            LocalDate endDate = currentDate.with(TemporalAdjusters.lastDayOfMonth());
+
+            List<DailyAnalyticsDTO> dailyAnalyticsDTO = calculateAnalyticsService
+                    .getOverallDailyAnalytics(startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+
+            if (dailyAnalyticsDTO.isEmpty()) {
+                throw new MissingDataException(ERROR + "No data found");
+            }
+
+            return dailyAnalyticsDTO;
         } catch (Exception e) {
             throw new MissingDataException(ERROR + e.getMessage());
         }

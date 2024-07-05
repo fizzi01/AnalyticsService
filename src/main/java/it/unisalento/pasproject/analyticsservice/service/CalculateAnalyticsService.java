@@ -27,22 +27,22 @@ public class CalculateAnalyticsService {
     private final MemberAnalyticsTemplate memberAnalyticsTemplate;
     //TODO: AGGIUNTA
     private final MemberMonthlyTemplate memberMonthlyTemplate;
+    private final OverallDailyAnalyticsTemplate overallDailyAnalyticsTemplate;
 
     //LOgger factory
     private static final Logger LOGGER = LoggerFactory.getLogger(CalculateAnalyticsService.class);
 
     @Autowired
     public CalculateAnalyticsService(MongoTemplate mongoTemplate,
-                                     AssignmentAnalyticsRepository assignmentAnalyticsRepository
-    ) {
+                                     AssignmentAnalyticsRepository assignmentAnalyticsRepository) {
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
 
         this.overallAnalyticsTemplate = new OverallAnalyticsTemplate(mongoTemplate);
         this.taskAnalyticsTemplate = new TaskAnalyticsTemplate(mongoTemplate);
         this.userAnalyticsTemplate = new UserAnalyticsTemplate(mongoTemplate);
         this.memberAnalyticsTemplate = new MemberAnalyticsTemplate(mongoTemplate);
-        //TODO: AGGIUNTA
         this.memberMonthlyTemplate = new MemberMonthlyTemplate(mongoTemplate);
+        this.overallDailyAnalyticsTemplate = new OverallDailyAnalyticsTemplate(mongoTemplate);
     }
 
     // #### Member Analytics ####
@@ -50,7 +50,6 @@ public class CalculateAnalyticsService {
         return memberAnalyticsTemplate.getAnalytics(memberEmail, startDate, endDate);
     }
 
-    //TODO: AGGIUNTA
     public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
         return memberMonthlyTemplate.getAnalyticsList(memberEmail, startDate, endDate);
     }
@@ -72,6 +71,10 @@ public class CalculateAnalyticsService {
         analyticsDTO = getAssignedTasksInfo(analyticsDTO, startDate, endDate);
 
         return Optional.ofNullable(analyticsDTO);
+    }
+
+    public List<DailyAnalyticsDTO> getOverallDailyAnalytics(LocalDateTime startDate, LocalDateTime endDate) {
+        return overallDailyAnalyticsTemplate.getAnalyticsList(null, startDate, endDate);
     }
 
     private AnalyticsDTO getAssignedTasksInfo(AnalyticsDTO analyticsDTO, LocalDateTime startDate, LocalDateTime endDate) {

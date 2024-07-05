@@ -1,8 +1,5 @@
 package it.unisalento.pasproject.analyticsservice.service.Template;
 
-import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 
@@ -14,8 +11,6 @@ import java.util.Optional;
 public abstract class AnalyticsTemplate<T> {
 
     protected final MongoTemplate mongoTemplate;
-
-    private static final Logger logger = LoggerFactory.getLogger(AnalyticsTemplate.class);
 
     protected AnalyticsTemplate(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
@@ -34,7 +29,6 @@ public abstract class AnalyticsTemplate<T> {
 
 
         Aggregation aggregation = Aggregation.newAggregation(operations);
-        logger.error("Aggregation: {}", aggregation);
         AggregationResults<T> results = mongoTemplate.aggregate(aggregation, getCollectionName(), getDTOClass());
 
         return results.getMappedResults();
