@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class MemberListAnalyticsDTO {
     private String memberEmail;
+    private int day;
     private int month;
     private int year;
     private double totalWorkMinutes;

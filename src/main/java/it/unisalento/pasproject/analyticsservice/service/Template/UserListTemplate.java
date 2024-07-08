@@ -49,7 +49,10 @@ public class UserListTemplate extends AnalyticsTemplate<UserListAnalyticsDTO> {
 
     @Override
     protected List<AggregationOperation> getAdditionalOperations() {
-        return List.of(Aggregation.lookup(mongoTemplate.getCollectionName(AssignedResource.class), "taskId", "taskId", "assignedResources"));
+        return List.of(
+                Aggregation.lookup(mongoTemplate.getCollectionName(AssignedResource.class), "taskId", "taskId", "assignedResources"),
+                Aggregation.unwind("assignedResources", true)
+        );
     }
 
     @Override
@@ -57,14 +60,16 @@ public class UserListTemplate extends AnalyticsTemplate<UserListAnalyticsDTO> {
         return Aggregation.project()
                 .andInclude("emailUtente")
                 .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true))
-                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("timeSpent")
+                        .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)
+                ).as("timeSpent")
                 .andInclude("assignedTime", "completedTime", "isComplete")
                 .and("assignedResources.assignedEnergyConsumptionPerHour").as("assignedEnergyConsumptionPerHour")
                 .and(ArithmeticOperators.Add.valueOf("assignedResources.assignedSingleScore")
                         .add("assignedResources.assignedMultiScore")
                         .add("assignedResources.assignedOpenclScore")
                         .add("assignedResources.assignedVulkanScore")
-                        .add("assignedResources.assignedCudaScore")).as("totalComputingPower")
+                        .add("assignedResources.assignedCudaScore")
+                ).as("totalComputingPower")
                 .and(ConvertOperators.ToInt.toInt(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%d"))).as("day")
                 .and(ConvertOperators.ToInt.toInt(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%m"))).as("month")
                 .and(ConvertOperators.ToInt.toInt(DateOperators.dateOf(COMPLETED_TIME_FIELD).withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%Y"))).as("year");
@@ -135,7 +140,8 @@ public class UserListTemplate extends AnalyticsTemplate<UserListAnalyticsDTO> {
     @Override
     protected SortOperation createSortOperation(String granularity) {
         return switch (granularity) {
-            case "day" -> Aggregation.sort(Sort.by(Sort.Order.asc("year"), Sort.Order.asc("month"), Sort.Order.asc("day")));
+            case "day" ->
+                    Aggregation.sort(Sort.by(Sort.Order.asc("year"), Sort.Order.asc("month"), Sort.Order.asc("day")));
             case "month" -> Aggregation.sort(Sort.by(Sort.Order.asc("year"), Sort.Order.asc("month")));
             case "year" -> Aggregation.sort(Sort.by(Sort.Order.asc("year")));
             default -> null;
