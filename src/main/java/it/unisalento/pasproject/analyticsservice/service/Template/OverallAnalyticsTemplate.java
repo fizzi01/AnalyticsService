@@ -16,12 +16,12 @@ public class OverallAnalyticsTemplate extends AnalyticsTemplate<AnalyticsDTO>{
     }
 
     @Override
-    public Optional<AnalyticsDTO> getAnalytics(String id, LocalDateTime startDate, LocalDateTime endDate) {
-        return super.getAnalytics(id, startDate, endDate);
+    public Optional<AnalyticsDTO> getAnalytics(String email, LocalDateTime startDate, LocalDateTime endDate) {
+        return super.getAnalytics(email, startDate, endDate);
     }
 
     @Override
-    protected MatchOperation createMatchOperation(String id, LocalDateTime startDate, LocalDateTime endDate) {
+    protected MatchOperation createMatchOperation(String email, LocalDateTime startDate, LocalDateTime endDate) {
         if (startDate != null && endDate != null) {
             return Aggregation.match(Criteria.where("assignedTime").gte(startDate).lte(endDate));
         } else {
@@ -52,7 +52,7 @@ public class OverallAnalyticsTemplate extends AnalyticsTemplate<AnalyticsDTO>{
     }
 
     @Override
-    protected GroupOperation createGroupOperation() {
+    protected GroupOperation createGroupOperation(String granularity) {
         return Aggregation.group()
                 .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
                 .sum("computingPower").as("computingPowerUsed")
@@ -67,7 +67,7 @@ public class OverallAnalyticsTemplate extends AnalyticsTemplate<AnalyticsDTO>{
     }
 
     @Override
-    protected ProjectionOperation createFinalProjection() {
+    protected ProjectionOperation createFinalProjection(String granularity) {
         return Aggregation.project("energyConsumed", "computingPowerUsed", "tasksSubmitted", "tasksCompleted", "startDate", "endDate")
                 .andExpression("totalWorkDuration / 60000").as("workMinutes") // Convert milliseconds to hours
                 .and(ArrayOperators.Size.lengthOfArray("uniqueMembers")).as("activeMemberCount")
@@ -75,7 +75,7 @@ public class OverallAnalyticsTemplate extends AnalyticsTemplate<AnalyticsDTO>{
     }
 
     @Override
-    protected SortOperation createSortOperation() {
+    protected SortOperation createSortOperation(String granularity) {
         return null;
     }
 

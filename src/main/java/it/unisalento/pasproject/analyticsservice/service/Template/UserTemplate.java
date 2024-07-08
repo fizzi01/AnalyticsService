@@ -9,32 +9,32 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public class UserAnalyticsTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
+public class UserTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
 
-    public UserAnalyticsTemplate(MongoTemplate mongoTemplate) {
+    public UserTemplate(MongoTemplate mongoTemplate) {
         super(mongoTemplate);
     }
 
     @Override
-    public Optional<UserAnalyticsDTO> getAnalytics(String id, LocalDateTime startDate, LocalDateTime endDate) {
-        return super.getAnalytics(id, startDate, endDate);
+    public Optional<UserAnalyticsDTO> getAnalytics(String email, LocalDateTime startDate, LocalDateTime endDate) {
+        return super.getAnalytics(email, startDate, endDate);
     }
 
     @Override
-    protected MatchOperation createMatchOperation(String id, LocalDateTime startDate, LocalDateTime endDate) {
+    protected MatchOperation createMatchOperation(String email, LocalDateTime startDate, LocalDateTime endDate) {
         MatchOperation matchOperation;
 
         if (startDate != null && endDate != null) {
-            matchOperation = Aggregation.match(Criteria.where("emailUtente").is(id)
+            matchOperation = Aggregation.match(Criteria.where("emailUtente").is(email)
                     .andOperator(Criteria.where("assignedTime").gte(startDate).lte(endDate)));
         } else if (startDate != null) {
-            matchOperation = Aggregation.match(Criteria.where("emailUtente").is(id)
+            matchOperation = Aggregation.match(Criteria.where("emailUtente").is(email)
                     .and("assignedTime").gte(startDate));
         } else if (endDate != null) {
-            matchOperation = Aggregation.match(Criteria.where("emailUtente").is(id)
+            matchOperation = Aggregation.match(Criteria.where("emailUtente").is(email)
                     .and("assignedTime").lte(endDate));
         } else {
-            matchOperation = Aggregation.match(Criteria.where("emailUtente").is(id));
+            matchOperation = Aggregation.match(Criteria.where("emailUtente").is(email));
         }
 
         return matchOperation;
@@ -61,7 +61,7 @@ public class UserAnalyticsTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
     }
 
     @Override
-    protected GroupOperation createGroupOperation() {
+    protected GroupOperation createGroupOperation(String granularity) {
         return Aggregation.group("emailUtente")
                 .first("emailUtente").as("userEmail")
                 .sum("timeSpent").as("totalTimeSpent")
@@ -75,13 +75,13 @@ public class UserAnalyticsTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
     }
 
     @Override
-    protected ProjectionOperation createFinalProjection() {
+    protected ProjectionOperation createFinalProjection(String granularity) {
         return Aggregation.project("userEmail", "totalTimeSpent", "tasksCompleted", "tasksOngoing", "tasksSubmitted", "startDate", "endDate", "energySaved", "computingPowerUsed")
                 .andExpression("totalTimeSpent / 60000").as("timeSpentOnTasks"); // Convert milliseconds to minutes
     }
 
     @Override
-    protected SortOperation createSortOperation() {
+    protected SortOperation createSortOperation(String granularity) {
         return null;
     }
 

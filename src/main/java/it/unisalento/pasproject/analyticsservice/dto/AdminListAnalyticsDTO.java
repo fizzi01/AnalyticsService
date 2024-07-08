@@ -3,11 +3,9 @@ package it.unisalento.pasproject.analyticsservice.dto;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
-public class DailyAnalyticsDTO {
+public class AdminListAnalyticsDTO {
     private double energyConsumed;
     private double computingPowerUsed;
 

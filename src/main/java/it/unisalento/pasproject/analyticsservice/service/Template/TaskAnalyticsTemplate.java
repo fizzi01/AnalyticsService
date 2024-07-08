@@ -19,13 +19,13 @@ public class TaskAnalyticsTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
     }
 
     @Override
-    public Optional<UserAnalyticsDTO> getAnalytics(String id, LocalDateTime startDate, LocalDateTime endDate) {
-        return super.getAnalytics(id, startDate, endDate);
+    public Optional<UserAnalyticsDTO> getAnalytics(String email, LocalDateTime startDate, LocalDateTime endDate) {
+        return super.getAnalytics(email, startDate, endDate);
     }
 
     @Override
-    protected MatchOperation createMatchOperation(String id, LocalDateTime startDate, LocalDateTime endDate) {
-        return Aggregation.match(Criteria.where(ASSIGNMENT_TASK_ID_FIELD).is(id));
+    protected MatchOperation createMatchOperation(String email, LocalDateTime startDate, LocalDateTime endDate) {
+        return Aggregation.match(Criteria.where(ASSIGNMENT_TASK_ID_FIELD).is(email));
     }
 
     @Override
@@ -52,7 +52,7 @@ public class TaskAnalyticsTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
     }
 
     @Override
-    protected GroupOperation createGroupOperation() {
+    protected GroupOperation createGroupOperation(String granularity) {
         return Aggregation.group(ASSIGNMENT_TASK_ID_FIELD)
                 .first(ASSIGNMENT_TASK_ID_FIELD).as(ASSIGNMENT_TASK_ID_FIELD)
                 .sum("timeSpent").as("totalTimeSpent")
@@ -61,13 +61,13 @@ public class TaskAnalyticsTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
     }
 
     @Override
-    protected ProjectionOperation createFinalProjection() {
+    protected ProjectionOperation createFinalProjection(String granularity) {
         return Aggregation.project(ASSIGNMENT_TASK_ID_FIELD, "totalTimeSpent", "energySaved", "computingPowerUsed")
                 .andExpression("totalTimeSpent / 60000").as("timeSpentOnTasks");// Convert milliseconds to minutes
     }
 
     @Override
-    protected SortOperation createSortOperation() {
+    protected SortOperation createSortOperation(String granularity) {
         return null;
     }
 

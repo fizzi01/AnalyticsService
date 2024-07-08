@@ -13,31 +13,31 @@ import java.util.Optional;
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.*;
 import static it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants.ASSIGNED_TIME_FIELD;
 
-public class MemberAnalyticsTemplate extends AnalyticsTemplate<MemberAnalyticsDTO>{
-    public MemberAnalyticsTemplate(MongoTemplate mongoTemplate) {
+public class MemberTemplate extends AnalyticsTemplate<MemberAnalyticsDTO>{
+    public MemberTemplate(MongoTemplate mongoTemplate) {
         super(mongoTemplate);
     }
 
     @Override
-    public Optional<MemberAnalyticsDTO> getAnalytics(String id, LocalDateTime startDate, LocalDateTime endDate) {
-        return super.getAnalytics(id, startDate, endDate);
+    public Optional<MemberAnalyticsDTO> getAnalytics(String email, LocalDateTime startDate, LocalDateTime endDate) {
+        return super.getAnalytics(email, startDate, endDate);
     }
 
     @Override
-    protected MatchOperation createMatchOperation(String id, LocalDateTime startDate, LocalDateTime endDate) {
+    protected MatchOperation createMatchOperation(String email, LocalDateTime startDate, LocalDateTime endDate) {
         MatchOperation matchOperation;
 
         if (startDate != null && endDate != null) {
-            matchOperation = Aggregation.match(Criteria.where("memberEmail").is(id)
+            matchOperation = Aggregation.match(Criteria.where("memberEmail").is(email)
                     .andOperator(Criteria.where("assignedTime").gte(startDate).lte(endDate)));
         } else if (startDate != null) {
-            matchOperation = Aggregation.match(Criteria.where("memberEmail").is(id)
+            matchOperation = Aggregation.match(Criteria.where("memberEmail").is(email)
                     .and("assignedTime").gte(startDate));
         } else if (endDate != null) {
-            matchOperation = Aggregation.match(Criteria.where("memberEmail").is(id)
+            matchOperation = Aggregation.match(Criteria.where("memberEmail").is(email)
                     .and("assignedTime").lte(endDate));
         } else {
-            matchOperation = Aggregation.match(Criteria.where("memberEmail").is(id));
+            matchOperation = Aggregation.match(Criteria.where("memberEmail").is(email));
         }
 
         return matchOperation;
@@ -65,7 +65,7 @@ public class MemberAnalyticsTemplate extends AnalyticsTemplate<MemberAnalyticsDT
     }
 
     @Override
-    protected GroupOperation createGroupOperation() {
+    protected GroupOperation createGroupOperation(String granularity) {
         return Aggregation.group(EMAIL_MEMBER_FIELD)
                 .first(EMAIL_MEMBER_FIELD).as(EMAIL_MEMBER_FIELD)
                 .sum(WORK_DURATION_FIELD).as(TOTAL_WORK_DURATION_FIELD)
@@ -79,13 +79,13 @@ public class MemberAnalyticsTemplate extends AnalyticsTemplate<MemberAnalyticsDT
     }
 
     @Override
-    protected ProjectionOperation createFinalProjection() {
+    protected ProjectionOperation createFinalProjection(String granularity) {
         return Aggregation.project(EMAIL_MEMBER_FIELD, TOTAL_WORK_DURATION_FIELD, ENERGY_CONSUMED_FIELD, COMPUTING_POWER_FIELD, TASKS_COMPLETED_FIELD, TASKS_IN_PROGRESS_FIELD, TASKS_ASSIGNED_FIELD, START_DATE_FIELD, END_DATE_FIELD)
                 .andExpression(TOTAL_WORK_DURATION_FIELD + " / 60000").as(WORK_TIME_FIELD); // Convert milliseconds to minutes
     }
 
     @Override
-    protected SortOperation createSortOperation() {
+    protected SortOperation createSortOperation(String granularity) {
         return null;
     }
 

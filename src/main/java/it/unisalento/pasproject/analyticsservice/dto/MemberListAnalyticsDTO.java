@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class MemberMonthlyAnalyticsDTO {
+public class MemberListAnalyticsDTO {
     private String memberEmail;
     private int month;
     private int year;

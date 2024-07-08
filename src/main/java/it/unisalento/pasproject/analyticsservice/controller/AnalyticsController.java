@@ -1,11 +1,9 @@
 package it.unisalento.pasproject.analyticsservice.controller;
 
-import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import it.unisalento.pasproject.analyticsservice.dto.*;
 import it.unisalento.pasproject.analyticsservice.exceptions.BadFormatRequestException;
 import it.unisalento.pasproject.analyticsservice.exceptions.MissingDataException;
-import it.unisalento.pasproject.analyticsservice.repositories.AssignedResourceRepository;
 import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
 import it.unisalento.pasproject.analyticsservice.service.AnalyticsQueryConstants;
 import it.unisalento.pasproject.analyticsservice.service.CalculateAnalyticsService;
@@ -17,9 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,26 +31,21 @@ public class AnalyticsController {
     private final UserCheckService userCheckService;
 
     private final AssignmentAnalyticsRepository assignmentAnalyticsRepository;
-    private final AssignedResourceRepository assignedResourceRepository;
 
     @Autowired
     public AnalyticsController(CalculateAnalyticsService calculateAnalyticsService,
                                UserCheckService userCheckService,
-                               AssignmentAnalyticsRepository assignmentAnalyticsRepository,
-                               AssignedResourceRepository assignedResourceRepository
-    ) {
+                               AssignmentAnalyticsRepository assignmentAnalyticsRepository)
+    {
         this.calculateAnalyticsService = calculateAnalyticsService;
         this.userCheckService = userCheckService;
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
-        this.assignedResourceRepository = assignedResourceRepository;
     }
 
 
     @GetMapping("/user/get")
     @Secured({ROLE_UTENTE})
     public UserAnalyticsDTO getUserAnalytics() {
-
-
         String emailUtente = userCheckService.getCurrentUserEmail();
         try {
             Optional<UserAnalyticsDTO> userAnalyticsDTO = calculateAnalyticsService.getUserAnalytics(emailUtente,null,null);
@@ -71,6 +62,24 @@ public class AnalyticsController {
             throw new MissingDataException(AnalyticsQueryConstants.ERROR + e.getMessage());
         }
 
+    }
+
+    @GetMapping("/user/list")
+    @Secured(ROLE_UTENTE)
+    public List<UserListAnalyticsDTO> getUserListAnalytics(@RequestParam int month, @RequestParam int year, @RequestParam String granularity) {
+        if(month < 1 || month > 12 || year < 0 || year > LocalDateTime.now().getYear()) {
+            throw new BadFormatRequestException("Wrong request format. Please provide a valid month and year");
+        }
+
+        String userEmail = userCheckService.getCurrentUserEmail();
+        LocalDateTime startDate = LocalDateTime.of(year, month, 1, 0, 0);
+        LocalDateTime endDate = LocalDateTime.now();
+
+        try {
+            return calculateAnalyticsService.getUserListAnalytics(userEmail, startDate, endDate, granularity);
+        } catch (Exception e) {
+            throw new MissingDataException(e.getMessage());
+        }
     }
 
     @GetMapping("/user/get/task/all")
@@ -97,8 +106,10 @@ public class AnalyticsController {
             listDTO.setList(list);
             return listDTO;
 
+        } catch (MissingDataException e) {
+            throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
-            throw new MissingDataException(ERROR + e.getMessage());
+            throw new MissingDataException(AnalyticsQueryConstants.ERROR + e.getMessage());
         }
 
     }
@@ -172,29 +183,25 @@ public class AnalyticsController {
 
     }
 
-    //TODO: AGGIUNTA
-    @GetMapping("/member/get/energy")
+    @GetMapping("/member/list")
     @Secured({ROLE_MEMBRO})
-    public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics() {
+    public List<MemberListAnalyticsDTO> getMemberMonthlyAnalytics(@RequestParam int month, @RequestParam int year, @RequestParam String granularity) {
+        if (month < 1 || month > 12 || year < 0 || year > LocalDateTime.now().getYear()) {
+            throw new BadFormatRequestException("Wrong request format. Please provide a valid month and year");
+        }
+
         String emailMembro = userCheckService.getCurrentUserEmail();
+        LocalDateTime startDate = LocalDateTime.of(year, month, 1, 0, 0);
+        LocalDateTime endDate = LocalDateTime.now();
 
         try {
-            List<MemberMonthlyAnalyticsDTO> memberMonthlyAnalytics = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
-            //List<AssignedResource> assignedResources = assignedResourceRepository.findByMemberEmailAndAssignedTimeGreaterThanEqualAndCompletedTimeLessThanEqual(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
-            //List<AssignedResource> assignedResources = calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, LocalDateTime.now().withDayOfYear(1).toLocalDate().atStartOfDay(), LocalDateTime.now());
-
-            /*if (assignedResources.isEmpty()) {
-                throw new MissingDataException(NO_DATA_FOUND_FOR_USER + emailMembro);
-            }*/
-
-            return memberMonthlyAnalytics;
+            return calculateAnalyticsService.getMemberMonthlyAnalytics(emailMembro, startDate, endDate, granularity);
 
         } catch (MissingDataException e) {
             throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
             throw new MissingDataException(ERROR + e.getMessage());
         }
-
     }
 
     @GetMapping("/member/get/filter")
@@ -271,28 +278,21 @@ public class AnalyticsController {
         }
     }
 
-    @GetMapping("/get/daily")
+    @GetMapping("/admin/list")
     @Secured({ROLE_ADMIN})
-    public List<DailyAnalyticsDTO> getDailyAnalytics(@RequestParam int month, @RequestParam int year) {
+    public List<AdminListAnalyticsDTO> getOverallListAnalytics(@RequestParam int month, @RequestParam int year, @RequestParam String granularity) {
         try {
-
-            if(month < 1 || month > 12 || year < 0){
+            if(month < 1 || month > 12 || year < 0 || year > LocalDateTime.now().getYear()) {
                 throw new BadFormatRequestException("Wrong request format. Please provide a valid month and year");
             }
 
-            LocalDate currentDate = LocalDate.of(year, month, 1);
+            LocalDateTime startDate = LocalDateTime.of(year, month, 1, 0, 0);
+            LocalDateTime endDate = LocalDateTime.now();
 
-            LocalDate startDate = currentDate.with(TemporalAdjusters.firstDayOfMonth());
-            LocalDate endDate = currentDate.with(TemporalAdjusters.lastDayOfMonth());
+            return calculateAnalyticsService.getOverallDailyAnalytics(startDate, endDate, granularity);
 
-            List<DailyAnalyticsDTO> dailyAnalyticsDTO = calculateAnalyticsService
-                    .getOverallDailyAnalytics(startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
-
-            if (dailyAnalyticsDTO.isEmpty()) {
-                throw new MissingDataException(ERROR + "No data found");
-            }
-
-            return dailyAnalyticsDTO;
+        } catch (MissingDataException e) {
+            throw new MissingDataException(e.getMessage());
         } catch (Exception e) {
             throw new MissingDataException(ERROR + e.getMessage());
         }

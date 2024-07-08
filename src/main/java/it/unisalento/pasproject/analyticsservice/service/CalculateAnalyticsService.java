@@ -1,6 +1,5 @@
 package it.unisalento.pasproject.analyticsservice.service;
 
-import it.unisalento.pasproject.analyticsservice.domain.AssignedResource;
 import it.unisalento.pasproject.analyticsservice.domain.AssignmentAnalytics;
 import it.unisalento.pasproject.analyticsservice.dto.*;
 import it.unisalento.pasproject.analyticsservice.repositories.AssignmentAnalyticsRepository;
@@ -23,35 +22,37 @@ public class CalculateAnalyticsService {
 
     private final OverallAnalyticsTemplate overallAnalyticsTemplate;
     private final TaskAnalyticsTemplate taskAnalyticsTemplate;
-    private final UserAnalyticsTemplate userAnalyticsTemplate;
-    private final MemberAnalyticsTemplate memberAnalyticsTemplate;
-    //TODO: AGGIUNTA
-    private final MemberMonthlyTemplate memberMonthlyTemplate;
-    private final OverallDailyAnalyticsTemplate overallDailyAnalyticsTemplate;
+    private final UserTemplate userTemplate;
+    private final UserListTemplate userListTemplate;
+    private final MemberTemplate memberTemplate;
+    private final MemberListTemplate memberListTemplate;
+    private final OverallListTemplate overallListTemplate;
 
     //LOgger factory
     private static final Logger LOGGER = LoggerFactory.getLogger(CalculateAnalyticsService.class);
 
     @Autowired
     public CalculateAnalyticsService(MongoTemplate mongoTemplate,
-                                     AssignmentAnalyticsRepository assignmentAnalyticsRepository) {
+                                     AssignmentAnalyticsRepository assignmentAnalyticsRepository)
+    {
         this.assignmentAnalyticsRepository = assignmentAnalyticsRepository;
 
         this.overallAnalyticsTemplate = new OverallAnalyticsTemplate(mongoTemplate);
         this.taskAnalyticsTemplate = new TaskAnalyticsTemplate(mongoTemplate);
-        this.userAnalyticsTemplate = new UserAnalyticsTemplate(mongoTemplate);
-        this.memberAnalyticsTemplate = new MemberAnalyticsTemplate(mongoTemplate);
-        this.memberMonthlyTemplate = new MemberMonthlyTemplate(mongoTemplate);
-        this.overallDailyAnalyticsTemplate = new OverallDailyAnalyticsTemplate(mongoTemplate);
+        this.userTemplate = new UserTemplate(mongoTemplate);
+        this.memberTemplate = new MemberTemplate(mongoTemplate);
+        this.memberListTemplate = new MemberListTemplate(mongoTemplate);
+        this.overallListTemplate = new OverallListTemplate(mongoTemplate);
+        this.userListTemplate = new UserListTemplate(mongoTemplate);
     }
 
     // #### Member Analytics ####
     public Optional<MemberAnalyticsDTO> getMemberAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
-        return memberAnalyticsTemplate.getAnalytics(memberEmail, startDate, endDate);
+        return memberTemplate.getAnalytics(memberEmail, startDate, endDate);
     }
 
-    public List<MemberMonthlyAnalyticsDTO> getMemberMonthlyAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate) {
-        return memberMonthlyTemplate.getAnalyticsList(memberEmail, startDate, endDate);
+    public List<MemberListAnalyticsDTO> getMemberMonthlyAnalytics(String memberEmail, LocalDateTime startDate, LocalDateTime endDate, String granularity) {
+        return memberListTemplate.getAnalyticsList(memberEmail, startDate, endDate, granularity);
     }
 
     // #### User Analytics ####
@@ -60,7 +61,11 @@ public class CalculateAnalyticsService {
     }
 
     public Optional<UserAnalyticsDTO> getUserAnalytics(String emailUtente, LocalDateTime startDate, LocalDateTime endDate) {
-        return userAnalyticsTemplate.getAnalytics(emailUtente, startDate, endDate);
+        return userTemplate.getAnalytics(emailUtente, startDate, endDate);
+    }
+
+    public List<UserListAnalyticsDTO> getUserListAnalytics(String emailUtente, LocalDateTime startDate, LocalDateTime endDate, String granularity) {
+        return userListTemplate.getAnalyticsList(emailUtente, startDate, endDate, granularity);
     }
 
     // #### Overall Analytics ####
@@ -73,8 +78,8 @@ public class CalculateAnalyticsService {
         return Optional.ofNullable(analyticsDTO);
     }
 
-    public List<DailyAnalyticsDTO> getOverallDailyAnalytics(LocalDateTime startDate, LocalDateTime endDate) {
-        return overallDailyAnalyticsTemplate.getAnalyticsList(null, startDate, endDate);
+    public List<AdminListAnalyticsDTO> getOverallDailyAnalytics(LocalDateTime startDate, LocalDateTime endDate, String granularity) {
+        return overallListTemplate.getAnalyticsList(null, startDate, endDate, granularity);
     }
 
     private AnalyticsDTO getAssignedTasksInfo(AnalyticsDTO analyticsDTO, LocalDateTime startDate, LocalDateTime endDate) {
