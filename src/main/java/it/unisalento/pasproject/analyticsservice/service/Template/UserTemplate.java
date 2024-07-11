@@ -42,7 +42,10 @@ public class UserTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
 
     @Override
     protected List<AggregationOperation> getAdditionalOperations() {
-        return List.of(Aggregation.lookup("assigned_resource_analytics", "taskId", "taskId", "assignedResources"));
+        return List.of(
+                Aggregation.lookup("assigned_resource_analytics", "taskId", "taskId", "assignedResources"),
+                Aggregation.unwind("assignedResources", true)
+        );
     }
 
     @Override
