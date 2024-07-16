@@ -40,10 +40,13 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.amqp:spring-rabbit-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring30x:4.11.0'
 }
+
 
 tasks.named('test') {
     outputs.dir snippetsDir
