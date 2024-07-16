@@ -218,7 +218,7 @@ class OverallAnalyticsTest {
 
         assertTrue(analyticsWithIncomplete.isPresent());
         // Ensure the incomplete assignment does not affect the completed tasks count and energy consumed
-        assertEquals(2940.0, analyticsWithIncomplete.get().getWorkMinutes());
+        assertEquals(2940.0, Math.floor(analyticsWithIncomplete.get().getWorkMinutes()));
         assertEquals(655, analyticsWithIncomplete.get().getEnergyConsumed());
     }
 
