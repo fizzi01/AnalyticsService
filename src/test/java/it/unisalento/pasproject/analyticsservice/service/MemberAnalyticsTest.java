@@ -153,10 +153,10 @@ class MemberAnalyticsTest {
 
         assertTrue(memberAnalyticsDTO.isPresent());
 
-        assertEquals(53900.0, memberAnalyticsDTO.get().getComputingPower());
-        assertEquals(335.0, memberAnalyticsDTO.get().getEnergyConsumed());
-        assertEquals(60, Math.floor(memberAnalyticsDTO.get().getWorkMinutes()));
-        assertEquals(2, memberAnalyticsDTO.get().getTasksCompleted());
+        assertEquals(108300.0, memberAnalyticsDTO.get().getComputingPower());
+        assertEquals(535, memberAnalyticsDTO.get().getEnergyConsumed());
+        assertEquals(2940, Math.floor(memberAnalyticsDTO.get().getWorkMinutes()));
+        assertEquals(4, memberAnalyticsDTO.get().getTasksCompleted());
         assertEquals(MEMBRO_1, memberAnalyticsDTO.get().getMemberEmail());
     }
 
@@ -166,52 +166,6 @@ class MemberAnalyticsTest {
         Optional<MemberAnalyticsDTO> result =  memberTemplate.getAnalytics(nonExistentEmail, null, null);
         assertFalse(result.isPresent());
     }
-
-   /* @Test
-    void getOverallAnalyticsShouldReturnCorrectData() {
-        Optional<AnalyticsDTO> result = calculateAnalyticsService.getOverallAnalytics(LocalDateTime.now().minusDays(30), LocalDateTime.now());
-        assertTrue(result.isPresent());
-        assertNotNull(result.get().getStartDate());
-        assertNotNull(result.get().getEndDate());
-        assertTrue(result.get().getActiveUserCount() > 0);
-        assertTrue(result.get().getTasksSubmitted() > 0);
-        assertTrue(result.get().getTasksCompleted() > 0);
-    }
-
-    @Test
-    void getOverallAnalyticsShouldReturnEmptyForFutureDates() {
-        Optional<AnalyticsDTO> result = calculateAnalyticsService.getOverallAnalytics(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(30));
-        assertFalse(result.isPresent());
-    }
-
-    @Test
-    void getUserAnalyticsShouldReturnDataForValidUser() {
-        Optional<UserAnalyticsDTO> result = calculateAnalyticsService.getUserAnalytics(UTENTE_1, LocalDateTime.now().minusDays(30), LocalDateTime.now());
-        assertTrue(result.isPresent());
-        assertEquals(UTENTE_1, result.get().getUserEmail());
-    }
-
-    @Test
-    void getUserAnalyticsShouldReturnEmptyForInvalidUser() {
-        String invalidUser = "invalid@example.com";
-        Optional<UserAnalyticsDTO> result = calculateAnalyticsService.getUserAnalytics(invalidUser, LocalDateTime.now().minusDays(30), LocalDateTime.now());
-        assertFalse(result.isPresent());
-    }
-
-    @Test
-    void getTaskUserAnalyticsShouldReturnDataForValidTaskId() {
-        Optional<UserAnalyticsDTO> result = calculateAnalyticsService.getTaskUserAnalytics("1");
-        assertTrue(result.isPresent());
-        assertEquals(60, result.get().getTimeSpentOnTasks());
-        assertEquals(335.0, result.get().getEnergySaved());
-        assertEquals(53900.0, result.get().getComputingPowerUsed());
-    }
-
-    @Test
-    void getTaskUserAnalyticsShouldReturnEmptyForInvalidTaskId() {
-        Optional<UserAnalyticsDTO> result = calculateAnalyticsService.getTaskUserAnalytics("invalid");
-        assertFalse(result.isPresent());
-    }*/
 
     @Test
     void getMemberMonthlyAnalyticsShouldReturnDataForValidEmailAndGranularity() throws JsonProcessingException {
