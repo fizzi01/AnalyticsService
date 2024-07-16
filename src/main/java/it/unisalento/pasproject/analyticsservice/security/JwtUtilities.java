@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -12,11 +13,14 @@ import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
 
-import static it.unisalento.pasproject.analyticsservice.security.SecurityConstants.JWT_SECRET;
-
 @Service
 public class JwtUtilities {
-    private final Key key = Keys.hmacShaKeyFor(JWT_SECRET.getBytes());
+    private final Key key;
+
+    @Autowired
+    public JwtUtilities(SecurityConstants securityConstants) {
+        key = Keys.hmacShaKeyFor(securityConstants.getJWT_SECRET().getBytes());
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
