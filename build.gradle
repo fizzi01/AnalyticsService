@@ -4,6 +4,34 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.4'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     id 'com.adarshr.test-logger' version "4.0.0"
+    id 'jacoco'
+}
+
+test {
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    "**/configuration/",
+                    "**/domain/",
+                    "**/dto/",
+                    "**/io/",
+                    "**/security/",
+                    "**/config/",
+                    "**/exceptions/",
+            ])
+        }))
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+    reportsDirectory = layout.buildDirectory.dir('customJacocoReportDir')
 }
 
 group = 'it.unisalento.pasproject'
