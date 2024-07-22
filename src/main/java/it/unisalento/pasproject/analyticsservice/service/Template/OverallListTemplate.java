@@ -74,7 +74,7 @@ public class OverallListTemplate extends AnalyticsTemplate<AdminListAnalyticsDTO
                     .addToSet("emailUtente").as("uniqueUsers")
                     .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasTaskCompleted").equalToValue(true))
                             .then(1).otherwise(0)).as("tasksCompleted")
-                    .count().as("tasksSubmitted")
+                    .addToSet("taskId").as("uniqueTaskIds")
                     .sum("workDuration").as("totalWorkDuration");
             case "month" -> Aggregation.group("year", "month")
                     .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
@@ -83,7 +83,7 @@ public class OverallListTemplate extends AnalyticsTemplate<AdminListAnalyticsDTO
                     .addToSet("emailUtente").as("uniqueUsers")
                     .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasTaskCompleted").equalToValue(true))
                             .then(1).otherwise(0)).as("tasksCompleted")
-                    .count().as("tasksSubmitted")
+                    .addToSet("taskId").as("uniqueTaskIds")
                     .sum("workDuration").as("totalWorkDuration");
             case "year" -> Aggregation.group("year")
                     .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
@@ -92,7 +92,7 @@ public class OverallListTemplate extends AnalyticsTemplate<AdminListAnalyticsDTO
                     .addToSet("emailUtente").as("uniqueUsers")
                     .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasTaskCompleted").equalToValue(true))
                             .then(1).otherwise(0)).as("tasksCompleted")
-                    .count().as("tasksSubmitted")
+                    .addToSet("taskId").as("uniqueTaskIds")
                     .sum("workDuration").as("totalWorkDuration");
             default -> null;
         };
@@ -101,7 +101,8 @@ public class OverallListTemplate extends AnalyticsTemplate<AdminListAnalyticsDTO
     @Override
     protected ProjectionOperation createFinalProjection(String granularity) {
         ProjectionOperation projectionOperation =
-                Aggregation.project("energyConsumed", "computingPowerUsed", "tasksSubmitted", "tasksCompleted")
+                Aggregation.project("energyConsumed", "computingPowerUsed", "tasksCompleted")
+                .and(ArrayOperators.Size.lengthOfArray("uniqueTaskIds")).as("tasksSubmitted")
                 .andExpression("totalWorkDuration / 60000").as("workMinutes") // Convert milliseconds to minutes
                 .and(ArrayOperators.Size.lengthOfArray("uniqueMembers")).as("activeMemberCount")
                 .and(ArrayOperators.Size.lengthOfArray("uniqueUsers")).as("activeUserCount");
