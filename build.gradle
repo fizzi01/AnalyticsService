@@ -35,7 +35,7 @@ jacoco {
 }
 
 group = 'it.unisalento.pasproject'
-version = 'v0.3.2'
+version = 'v0.3.3'
 
 java {
     sourceCompatibility = '21'
