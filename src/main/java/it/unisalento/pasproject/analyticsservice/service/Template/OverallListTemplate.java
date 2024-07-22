@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -39,7 +40,8 @@ public class OverallListTemplate extends AnalyticsTemplate<AdminListAnalyticsDTO
     protected List<AggregationOperation> getAdditionalOperations() {
         return List.of(
                 Aggregation.lookup(mongoTemplate.getCollectionName(AssignedResource.class), "taskId", "taskId", "resources"),
-                Aggregation.unwind("resources", true));
+                Aggregation.unwind("resources", true)
+        );
     }
 
     @Override
@@ -61,19 +63,20 @@ public class OverallListTemplate extends AnalyticsTemplate<AdminListAnalyticsDTO
                         .add("resources.assignedCudaScore")).as("computingPower")
                 .and(ConvertOperators.ToInt.toInt(DateOperators.dateOf("assignedTime").withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%d"))).as("day")
                 .and(ConvertOperators.ToInt.toInt(DateOperators.dateOf("assignedTime").withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%m"))).as("month")
-                .and(ConvertOperators.ToInt.toInt(DateOperators.dateOf("assignedTime").withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%Y"))).as("year");
+                .and(ConvertOperators.ToInt.toInt(DateOperators.dateOf("assignedTime").withTimezone(DateOperators.Timezone.valueOf("UTC")).toString("%Y"))).as("year")
+                .andExpression("{ taskId: '$taskId', hasTaskCompleted: '$isComplete' }").as("taskIdHasCompletedCombo");
     }
 
     @Override
     protected GroupOperation createGroupOperation(String granularity) {
+
         return switch (granularity) {
             case "day" -> Aggregation.group("year", "month", "day")
                     .sum("assignedEnergyConsumptionPerHour").as("energyConsumed")
                     .sum("computingPower").as("computingPowerUsed")
                     .addToSet("memberEmail").as("uniqueMembers")
                     .addToSet("emailUtente").as("uniqueUsers")
-                    .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasTaskCompleted").equalToValue(true))
-                            .then(1).otherwise(0)).as("tasksCompleted")
+                    .addToSet("taskIdHasCompletedCombo").as("taskIdHasCompletedSet")
                     .addToSet("taskId").as("uniqueTaskIds")
                     .sum("workDuration").as("totalWorkDuration");
             case "month" -> Aggregation.group("year", "month")
@@ -81,8 +84,7 @@ public class OverallListTemplate extends AnalyticsTemplate<AdminListAnalyticsDTO
                     .sum("computingPower").as("computingPowerUsed")
                     .addToSet("memberEmail").as("uniqueMembers")
                     .addToSet("emailUtente").as("uniqueUsers")
-                    .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasTaskCompleted").equalToValue(true))
-                            .then(1).otherwise(0)).as("tasksCompleted")
+                    .addToSet("taskIdHasCompletedCombo").as("taskIdHasCompletedSet")
                     .addToSet("taskId").as("uniqueTaskIds")
                     .sum("workDuration").as("totalWorkDuration");
             case "year" -> Aggregation.group("year")
@@ -90,22 +92,31 @@ public class OverallListTemplate extends AnalyticsTemplate<AdminListAnalyticsDTO
                     .sum("computingPower").as("computingPowerUsed")
                     .addToSet("memberEmail").as("uniqueMembers")
                     .addToSet("emailUtente").as("uniqueUsers")
-                    .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("hasTaskCompleted").equalToValue(true))
-                            .then(1).otherwise(0)).as("tasksCompleted")
+                    .addToSet("taskIdHasCompletedCombo").as("taskIdHasCompletedSet")
                     .addToSet("taskId").as("uniqueTaskIds")
                     .sum("workDuration").as("totalWorkDuration");
             default -> null;
         };
     }
 
+
     @Override
     protected ProjectionOperation createFinalProjection(String granularity) {
         ProjectionOperation projectionOperation =
-                Aggregation.project("energyConsumed", "computingPowerUsed", "tasksCompleted")
+                Aggregation.project("energyConsumed", "computingPowerUsed")
                 .and(ArrayOperators.Size.lengthOfArray("uniqueTaskIds")).as("tasksSubmitted")
                 .andExpression("totalWorkDuration / 60000").as("workMinutes") // Convert milliseconds to minutes
                 .and(ArrayOperators.Size.lengthOfArray("uniqueMembers")).as("activeMemberCount")
-                .and(ArrayOperators.Size.lengthOfArray("uniqueUsers")).as("activeUserCount");
+                .and(ArrayOperators.Size.lengthOfArray("uniqueUsers")).as("activeUserCount")
+                .and(
+                        ArrayOperators.Size.lengthOfArray(
+                                ArrayOperators.Filter.filter("taskIdHasCompletedSet")
+                                        .as("task")
+                                        .by(ComparisonOperators.Eq.valueOf("task.hasTaskCompleted").equalToValue(true))
+                        )
+                ).as("tasksCompleted");
+
+
 
         projectionOperation = switch (granularity) {
             case "day" -> projectionOperation

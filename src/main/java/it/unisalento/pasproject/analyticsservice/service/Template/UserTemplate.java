@@ -51,7 +51,7 @@ public class UserTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
     @Override
     protected ProjectionOperation createProjectionOperation() {
         return Aggregation.project()
-                .andInclude("emailUtente")
+                .andInclude("emailUtente","taskId")
                 .and(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true))
                         .thenValueOf(ArithmeticOperators.Subtract.valueOf("completedTime").subtract("assignedTime")).otherwise(0)).as("timeSpent")
                 .andInclude("assignedTime", "completedTime", "isComplete")
@@ -65,7 +65,7 @@ public class UserTemplate extends AnalyticsTemplate<UserAnalyticsDTO>{
 
     @Override
     protected GroupOperation createGroupOperation(String granularity) {
-        return Aggregation.group("emailUtente")
+        return Aggregation.group("emailUtente", "taskId")
                 .first("emailUtente").as("userEmail")
                 .sum("timeSpent").as("totalTimeSpent")
                 .sum(ConditionalOperators.when(ComparisonOperators.Eq.valueOf("isComplete").equalToValue(true)).then(1).otherwise(0)).as("tasksCompleted")
